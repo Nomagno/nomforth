@@ -59,3 +59,18 @@
     PPW 2DROP \ WE DROP FROM THE RETURN STACK BECAUSE IF WE
               \ DID NOT LOOP, THE 2>R WAS NOT EXECUTED YET
 ; IMMEDIATE
+
+: BEGIN-STRUCTURE ( -- addr 0 ; Exec -- size )
+    CREATE
+    HERE 0 0 , \ Mark stack, put down empty value
+    DOES> @   \ -- record-length
+;
+
+: FIELD: ( addr n <"name"> -- addr ; Exec: addr -- 'addr )
+    CREATE OVER , +
+    DOES> @ +
+;
+
+: END-STRUCTURE ( addr n -- )
+    SWAP !      \ set len
+;

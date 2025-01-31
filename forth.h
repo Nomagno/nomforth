@@ -33,13 +33,17 @@ typedef enum {
                     //the payload can contain some information
                     //pertaining to the loop, like a link to the previous leave
                     //for faster traversal by the loop that must replace it
-    t_end=10 // Return from word
+    t_end=10, // Return from word
+    t_end_notailcall=11 // Return from word but ensuring this label causes no tail recursion
 } CodeType;
 
 // WORD = (Prev Name (Preference x DataSize) [Data])
 // Prev: pointer to previous entry in dict
 // Name: pointer to string in string list
 
+// The dictionary pointer points to the start of the last-defined word,
+// The pad, function stack, and data stack pointers point to the
+//     firt nonused byte.
 
 typedef struct {
     Cell dstack_ptr;
@@ -79,7 +83,7 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define STRSIZE 0x0004
 #define STRPTR 0x0005
 
-#define DICT_START 0x0010
+#define DICT_START 0x0020
 #define DSTACK_START 0x0A00
 #define FSTACK_START 0x0B00
 #define PAD_START    0x0C00

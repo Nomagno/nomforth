@@ -152,7 +152,7 @@ MAKEPRIM(worddoesprim) {
 MAKEPRIM(worddoes) {
     Cell appended_w = findWord(c, m, 'c', "DOES>PRIM", strlen("DOES>PRIM"));
     appendWord(c, m, CA(WT(appended_w)), 1);
-    appendWord(c, m, CA(WT(t_end)), 1);
+    appendWord(c, m, CA(WT(t_end_notailcall)), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
 MAKEPRIM(move) {
     Cell n = dataPop(c, m);
