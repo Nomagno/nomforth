@@ -7,7 +7,6 @@
 
 MAKEPRIM(colon);
 MAKEPRIM(colonAnonymous);
-MAKEPRIM(colonAnonymous);
 MAKEPRIM(semicolon);
 MAKEPRIM(immediate);
 MAKEPRIM(leftbracket);
@@ -24,8 +23,10 @@ MAKEPRIM(begin);
 MAKEPRIM(again);
 MAKEPRIM(until);
 
+MAKEPRIM(variablerawsize);
+MAKEPRIM(emptyvariable);
 MAKEPRIM(variable);
-
+MAKEPRIM(literal);
 MAKEPRIM(comma);
 MAKEPRIM(allot);
 MAKEPRIM(here);
@@ -46,8 +47,6 @@ MAKEPRIM(is);
 MAKEPRIM(defer);
 MAKEPRIM(postpone);
 MAKEPRIM(execute);
-MAKEPRIM(compile);
-MAKEPRIM(literal);
 
 MAKEPRIM(add);
 MAKEPRIM(minus);
@@ -139,7 +138,10 @@ MAKEPRIM(rtuck);
     {PRIM(again), 1, "AGAIN"}, \
     {PRIM(until), 1, "UNTIL"}, \
                             \
+    {PRIM(variablerawsize), 0, "RAW_VAR_SIZE"}, \
+    {PRIM(emptyvariable), 0, "EMPTY_VAR"}, \
     {PRIM(variable), 0, "VARIABLE"}, \
+    {PRIM(literal), 0, "LIT,"}, \
     {PRIM(comma), 0, ","}, \
     {PRIM(allot), 0, "ALLOT"}, \
     {PRIM(here), 0, "HERE"}, \
@@ -160,9 +162,6 @@ MAKEPRIM(rtuck);
     {PRIM(defer), 0, "DEFER"}, \
     {PRIM(postpone), 1, "POSTPONE"}, \
     {PRIM(execute), 0, "EXECUTE"}, \
-    {PRIM(compile), 0, "COMPILE,"}, \
-    {PRIM(literal), 1, "LITERAL"}, \
-    {PRIM(literal), 0, "LIT,"}, \
                             \
     {PRIM(add), 0, "+"}, \
     {PRIM(minus), 0, "-"}, \
@@ -197,11 +196,11 @@ MAKEPRIM(rtuck);
     {PRIM(2rsend), 0, "2R>"}, \
                             \
     {PRIM(count), 0, "COUNT"}, \
+    {PRIM(bl), 0, "BL"}, \
     {PRIM(emit), 0, "EMIT"}, \
     {PRIM(type), 0, "TYPE"}, \
     {PRIM(cr), 0, "CR"}, \
     {PRIM(spaces), 0, "SPACES"}, \
-    {PRIM(bl), 0, "BL"}, \
     {PRIM(dot), 0, "."}, \
     {PRIM(udot), 0, "U."}, \
     {PRIM(dotmem), 0, "M."}, \

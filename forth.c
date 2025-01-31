@@ -279,10 +279,11 @@ void interpret(Ctx *c, Cell *m, char *l) {
         if (w != 0) {
             _Bool priority = m[w+2]>>24;
             if (priority || m[c->compile_state_ptr] == 0) {
-                executeWord(c, m, w);
+                dataPush(c, m, w);
+                PRIM(execute)(c, m);
             } else {
                 dataPush(c, m, w);
-                PRIM(compile)(c, m);
+                PRIM(comma)(c, m);
             }
         } else {
             *c->inter_str = '\0';
@@ -347,7 +348,7 @@ void initPrimitives(Ctx *c, Cell *m) {
     {
         if (primTable[i].func == NULL) { }
         else {
-            makeWord(c, m, primTable[i].name, strlen(primTable[i].name), primTable[i].priority, CA(WT(t_primitive, i), WT(t_end)), 3);
+            makeWord(c, m, primTable[i].name, strlen(primTable[i].name), primTable[i].priority, CA(t_primitive, i, t_end), 3);
         }
     }
 }

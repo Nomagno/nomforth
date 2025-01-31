@@ -90,7 +90,6 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define HEAP_START   0x1000
 
 #define CA(...) (Cell[]){__VA_ARGS__}
-#define WT(...) __VA_ARGS__
 
 Cell addToPad(Ctx *c, Cell *m, char *s, unsigned name_size);
 void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size, _Bool p,
