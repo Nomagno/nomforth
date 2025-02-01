@@ -3,7 +3,7 @@ Just a simple Forth that I'll expand as I want to add more features.
 
 Currently, it has only the most basic getline-based support for input.
 
-Simply compile and link `prims.c` and `forth.c`. When running the program.
+Simply compile and link `prims.c` and `forth.c`. When running the program. For use with `runhelper.sh`, ensure the name of the binary executable is `fex`.
 
 You can use `m.` at any point to get a memory dump of the first 4096 cells of the VM, which in its default configuration are basically all that will be used in normal program execution anyways. There are only 32-bit cells, and no native byte-level access facilities are provided.
 
