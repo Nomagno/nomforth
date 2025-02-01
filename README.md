@@ -9,7 +9,7 @@ You can use `m.` at any point to get a memory dump of the first 4096 cells of th
 
 You can change the constants in `prims.h` and `forth.h` to add/remove/configure primitives and change the VM memory layout, respectively.
 
-It is recommended to copy paste `core.fs` to bootstrap some more basic but non-primitive words. File and other I/O facilities are coming in the near future.
+There is no native file I/O at the moment. Because of this, a script called `runhelper.sh` that can be executed along with `core.fs` (and any other files to prepend, in the form `file1.fs file2.fs ...`) has been included, that allows to prepend any amount of files to be ran at the beggining of the interactive session.
 
 The current target is to get a minimal port of `mini-oof.fs` (replacing +LOOP with LOOP and aliasing ?DO as DO) from gforth to work. At the moment it almost works but crashes in the vtable lookup phase of method execution.
 

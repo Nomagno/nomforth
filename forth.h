@@ -101,7 +101,7 @@ void executePrimitive(Ctx *c, Cell *m, Cell id);
 void executeForeign(Ctx *c, Cell *m, Cell id);
 void executeComposite(Ctx *c, Cell *m, Cell w);
 void executeWord(Ctx *c, Cell *m, Cell w);
-void interpret(Ctx *c, Cell *m, char *l);
+void interpret(Ctx *c, Cell *m, char *l, _Bool silent);
 
 void dataPush(Ctx *c, Cell *m, Cell v);
 Cell dataPop(Ctx *c, Cell *m);

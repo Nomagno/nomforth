@@ -16,7 +16,7 @@ PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 MAKEPRIM(colon) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: word created with no name\n"); }
+    if (w_size == 0) { printf("WARNING: word created with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     makeWord(c, m, lorig, w_size, 0, NULL, 0);
@@ -113,7 +113,7 @@ MAKEPRIM(variablerawsize) {
 MAKEPRIM(emptyvariable) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'VARIABLE' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'VARIABLE' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     makeWord(c, m, lorig, w_size, 0, NULL, 0);
@@ -121,7 +121,7 @@ MAKEPRIM(emptyvariable) {
 MAKEPRIM(variable) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'VARIABLE' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'VARIABLE' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     unsigned size = dataPop(c, m);
@@ -182,21 +182,21 @@ MAKEPRIM(move) {
 MAKEPRIM(bracket_char_bracket) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: '[CHAR]' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: '[CHAR]' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
     appendWord(c, m, CA(t_num, lorig[0]), 2);
 }
 MAKEPRIM(char) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'CHAR' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'CHAR' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
     dataPush(c, m, lorig[0]);
 }
 MAKEPRIM(word) {
     int w_size = advanceTo(&c->inter_str, (char)dataPop(c, m), 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'WORD' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'WORD' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     Cell created_string = addToPad(c, m, lorig, w_size);
@@ -205,7 +205,7 @@ MAKEPRIM(word) {
 MAKEPRIM(parse) {
     int w_size = advanceTo(&c->inter_str, (char)dataPop(c, m), 0);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'PARSER' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'PARSER' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
     c->inter_str += 1;
 
@@ -216,7 +216,7 @@ MAKEPRIM(parse) {
 MAKEPRIM(parse_name) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'PASER-NAME' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'PASER-NAME' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     Cell created_string = addToPad(c, m, lorig, w_size);
@@ -236,7 +236,7 @@ MAKEPRIM(who) {
 MAKEPRIM(is) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'IS' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'IS' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     Cell assigned_word = findWord(c, m, 'c', lorig, w_size);
@@ -245,12 +245,12 @@ MAKEPRIM(is) {
     if ((m[assigned_word+2] & 0xFFFF) >= 1)
         m[assigned_word+3] = popped_xt;
     else
-        printf("Error: Can't assign to non-deferred word with inappropiate size %u\n", m[assigned_word]);
+        printf("{ERROR: Can't assign to non-deferred word with inappropiate size %u}\n", m[assigned_word]);
 }
 MAKEPRIM(defer) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'DEFER' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'DEFER' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     makeWord(c, m, lorig, w_size, 0, CA(t_end, t_end), 2);
@@ -258,7 +258,7 @@ MAKEPRIM(defer) {
 MAKEPRIM(postpone) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("Warning: 'POSTPONE' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'POSTPONE' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     Cell found_word = findWord(c, m, 'c', lorig, w_size);

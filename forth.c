@@ -57,7 +57,7 @@ void dataPush(Ctx *c, Cell *m, Cell v) {
 
 Cell dataPop(Ctx *c, Cell *m) {
     if (m[c->dstack_ptr] == c->dstack_start) {
-        printf("Data stack underflow. Aborting.\n");
+        printf("{Data stack underflow. ABORTING}\n");
         exit(1);
     }
 
@@ -78,7 +78,7 @@ void funcPush(Ctx *c, Cell *m, Cell v) {
 
 Cell funcPop(Ctx *c, Cell *m) {
     if (m[c->fstack_ptr] == c->fstack_start) {
-        printf("Function stack underflow. Aborting.\n");
+        printf("{Function stack underflow. ABORTING}\n");
         exit(1);
     }
 
@@ -200,18 +200,16 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             m[c->program_counter_ptr] = m[contents+1];
             break;
         case t_leavelabel:
-            printf("Non-replaced leave labelled, this shouldn't have happened. Aborting.\n");
+            printf("{ERROR: Non-replaced leave labelled, this shouldn't have happened}\n");
             reached_end = 1;
             break;         
         case t_end:
             if (m[c->fstack_ptr] - c->fstack_start == 0) {
                 //If the stack size is 0,
                 //we're going back to the interpreter
-                //printf("Returning control to interpreter\n");
                 reached_end = 1;
             } else {
                 // By convention the program counter needs to be incremented from the callee
-                //printf("Returning control to caller: %X, %X\n", m[c->fstack_ptr], c->fstack_start);
                 m[c->program_counter_ptr] = funcPop(c, m);
                 m[c->program_counter_ptr] += 1;
             }
@@ -222,11 +220,9 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             if (m[c->fstack_ptr] - c->fstack_start == 0) {
                 //If the stack size is 0,
                 //we're going back to the interpreter
-                //printf("Returning control to interpreter\n");
                 reached_end = 1;
             } else {
                 // By convention the program counter needs to be incremented from the callee
-                //printf("Returning control to caller: %X, %X\n", m[c->fstack_ptr], c->fstack_start);
                 m[c->program_counter_ptr] = funcPop(c, m);
                 m[c->program_counter_ptr] += 1;
             }
@@ -247,10 +243,8 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
 }
 
 int advanceTo(char **s, char target, _Bool skip_leading) {
- if (skip_leading) while (**s == target) *s += 1;
- else {
-  if (**s == ' ') *s += 1;
- }
+    if (skip_leading) { while (**s == target) *s += 1; }
+    else { if (**s == ' ') *s += 1; }
     char *orig = *s;
 
     while (**s != target && **s != '\0') *s += 1;
@@ -262,7 +256,7 @@ int advanceTo(char **s, char target, _Bool skip_leading) {
     else return (now-orig);
 }
 
-void interpret(Ctx *c, Cell *m, char *l) {
+void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
     _Bool l_c = 1;
     _Bool was_there_error = 0;
     c->inter_min = l;
@@ -299,13 +293,13 @@ void interpret(Ctx *c, Cell *m, char *l) {
                     PRIM(literal)(c, m);
                 }
             } else {
-                printf("Error: unknown word %.*s. Aborting.\n", w_size, lorig);
+                printf("{ERROR: unknown word %.*s}\n", w_size, lorig);
                 l_c = 0;
                 was_there_error = 1;
             }
         }
     }
-    if (!was_there_error) printf(" OK\n");
+    if (!was_there_error && !silent) printf(" {OK}\n");
 }
 
 void init(Ctx *c, Cell *m) {
@@ -364,16 +358,30 @@ int main(void) {
     char *linep = &line[0];
     size_t lines = 1024;
 
-    printMemory(memory, 0, 0x1000, 0x10);
+    _Bool silent = 0;
+
+    printf("Welcome to nomForth!\n"
+           "To exit, type \'quit\'.\n");
+
     while(1) {
-        printf("nomForth>");
         int nread = getline(&linep, &lines, stdin);
         line[nread-1] = '\0';
-        if (nread == 0) line[0] = '\0';
-        if (strcmp(line, "quit") == 0) {
+        if (nread <= 1) {
+            line[0] = '\0';
+            continue;
+        }
+        if (strcmp(line, "..silent") == 0) {
+            printf("Entering silent mode\n");
+            silent = 1;
+        } else if (strcmp(line, "..verbose") == 0) {
+            silent = 0;
+            printf("Exiting silent mode\n");
+        } else if (strcmp(line, "quit") == 0) {
             printf("\nThanks for using nomForth.\n");
             break;
+        } else {
+            if (!silent) printf("OUTPUT:");
+            interpret(&myContext, memory, line, silent);
         }
-        interpret(&myContext, memory, line);
     }
 }
