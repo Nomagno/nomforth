@@ -89,6 +89,7 @@ MAKEPRIM(spaces);
 MAKEPRIM(bl);
 MAKEPRIM(dot);
 MAKEPRIM(udot);
+MAKEPRIM(xdot);
 MAKEPRIM(dotmem);
 MAKEPRIM(dotstack);
 MAKEPRIM(udotstack);
@@ -203,6 +204,7 @@ MAKEPRIM(rtuck);
     {PRIM(spaces), 0, "SPACES"}, \
     {PRIM(dot), 0, "."}, \
     {PRIM(udot), 0, "U."}, \
+    {PRIM(xdot), 0, "X."}, \
     {PRIM(dotmem), 0, "M."}, \
     {PRIM(dotstack), 0, ".S"}, \
     {PRIM(udotstack), 0, "U.S"}, \

@@ -26,7 +26,7 @@ Cell addToPad(Ctx *c, Cell *m, char *s, unsigned name_size) {
 void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size,
               _Bool p, Cell *data, unsigned data_size) {
     Cell prev_loc = m[c->dict_pos_ptr];
-    Cell prev_size = (prev_loc == 0) ? DICT_START : (3+(m[prev_loc+2] & 0xFFFF));
+    Cell prev_size = (prev_loc == 0) ? DICT_START : (3+(m[prev_loc+2] & 0x0000FFFF));
     m[c->dict_pos_ptr] = prev_loc + + prev_size;
 
     Cell curr_loc = m[c->dict_pos_ptr];
@@ -39,7 +39,7 @@ void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size,
 
 Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size) {
     Cell curr_loc = m[c->dict_pos_ptr];
-    unsigned size = 3+m[curr_loc+2];
+    unsigned size = 3+(m[curr_loc+2] & 0x0000FFFF);
     for (unsigned i = 0; i < data_size; i++)
         m[curr_loc+size+i] = data[i];
     m[curr_loc+2] += data_size;
@@ -271,7 +271,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
         
         Cell w = findWord(c, m, 'c', lorig, w_size);
         if (w != 0) {
-            _Bool priority = m[w+2]>>24;
+            _Bool priority = m[w+2]>>24 & 0x00FF; /*Highest nibble is for auxiliary info, second highest is for immediacy info*/
             if (priority || m[c->compile_state_ptr] == 0) {
                 dataPush(c, m, w);
                 PRIM(execute)(c, m);
@@ -286,7 +286,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
             if (l_c != 0) *c->inter_str = ' ';
 
             if (endptr-lorig == w_size) {
-                if (m[w+2]>>24 != 0 || m[c->compile_state_ptr] == 0)
+                if ((m[w+2]>>24 & 0x00FF) != 0 || m[c->compile_state_ptr] == 0)
                     dataPush(c, m, val);
                 else {
                     dataPush(c, m, val);

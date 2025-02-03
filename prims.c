@@ -108,7 +108,7 @@ MAKEPRIM(until){
 /*---------------------------------------------*/
 MAKEPRIM(variablerawsize) {
     Cell w_cell = dataPop(c, m);
-    dataPush(c, m, m[w_cell+2] & 0xFFFF);
+    dataPush(c, m, m[w_cell+2] & 0x0000FFFF);
 }
 MAKEPRIM(emptyvariable) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
@@ -117,6 +117,7 @@ MAKEPRIM(emptyvariable) {
     char *lorig = c->inter_str-w_size;
 
     makeWord(c, m, lorig, w_size, 0, NULL, 0);
+    m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable by setting highest bit*/
 }
 MAKEPRIM(variable) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
@@ -126,6 +127,7 @@ MAKEPRIM(variable) {
 
     unsigned size = dataPop(c, m);
     makeWord(c, m, lorig, w_size, 0, NULL, 0);
+    m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable*/
     appendWord(c, m, CA(t_num, m[c->dict_pos_ptr]+7), 2); // +3, pointer to first empty cell
     appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
     for (unsigned i = 0; i < size; i++) {
@@ -147,16 +149,16 @@ MAKEPRIM(allot) {
     }
 }
 MAKEPRIM(here) {
- dataPush(c, m, m[c->dict_pos_ptr]+3+(m[m[c->dict_pos_ptr]+2] & 0xFFFF));
+ dataPush(c, m, m[c->dict_pos_ptr]+3+(m[m[c->dict_pos_ptr]+2] & 0x0000FFFF));
 }
 MAKEPRIM(getwordbodysize) {
     Cell xt = dataPop(c, m);
-    dataPush(c, m, (m[xt+2] & 0xFFFF)-4);
+    dataPush(c, m, (m[xt+2] & 0x0000FFFF)-4);
 }
 MAKEPRIM(getwordbody) {
     Cell xt = dataPop(c, m);
     //Must have standard structure created by VARIABLE
-    if ((m[xt+2] & 0xFFFF) > 0) dataPush(c, m, xt+7);
+    if ((m[xt+2] & 0x0000FFFF) > 0) dataPush(c, m, xt+7);
     else dataPush(c, m, 0);
 }
 MAKEPRIM(worddoesprim) {
@@ -242,7 +244,7 @@ MAKEPRIM(is) {
     Cell assigned_word = findWord(c, m, 'c', lorig, w_size);
 
     Cell popped_xt = dataPop(c, m);
-    if ((m[assigned_word+2] & 0xFFFF) >= 1)
+    if ((m[assigned_word+2] & 0x0000FFFF) >= 1)
         m[assigned_word+3] = popped_xt;
     else
         printf("{ERROR: Can't assign to non-deferred word with inappropiate size %u}\n", m[assigned_word]);
@@ -452,7 +454,8 @@ MAKEPRIM(cr) {
     printf("\n");
 }
 MAKEPRIM(spaces) {
-    for (unsigned i = 0; i < dataPop(c, m); i++) {
+    Cell x = dataPop(c, m);
+    for (unsigned i = 0; i < x; i++) {
         printf(" ");
     }
 }
@@ -461,6 +464,9 @@ MAKEPRIM(dot) {
 }
 MAKEPRIM(udot) {
     printf(" %u", dataPop(c, m));
+}
+MAKEPRIM(xdot) {
+    printf(" %08X", dataPop(c, m));
 }
 MAKEPRIM(dotmem) {
     printMemory(m, 0, 0x1000, 0x10);
