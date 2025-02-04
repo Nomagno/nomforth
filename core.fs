@@ -30,7 +30,7 @@
 
 : ['] ( compilation: "name" --; run-time: -- xt ) ' LIT, ; immediate
 : PPW
-    POSTPONE [']
+    ' LIT,
     ['] , ,
 ; immediate
 
