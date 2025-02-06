@@ -50,6 +50,7 @@ typedef struct {
     Cell dstack_start;
     Cell fstack_ptr;
     Cell fstack_start;
+    Cell flags_ptr;
     Cell pad_pos_ptr;
     Cell dict_pos_ptr;
 
@@ -82,6 +83,7 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define STRPOS 0x0003
 #define STRSIZE 0x0004
 #define STRPTR 0x0005
+#define FLAGS 0x0006
 
 #define DICT_START 0x0020
 #define DSTACK_START 0x0A00

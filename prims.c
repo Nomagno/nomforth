@@ -384,14 +384,14 @@ MAKEPRIM(store) {
     m[adr] = val;
 }
 MAKEPRIM(rget) {
-	R_SAVE();
+    R_SAVE();
     funcPush(c, m, dataPop(c, m));
-	R_RESTORE();
+    R_RESTORE();
 }
 MAKEPRIM(rsend) {
-	R_SAVE();
+    R_SAVE();
     dataPush(c, m, funcPop(c, m));
-	R_RESTORE();
+    R_RESTORE();
 }
 /*---------------------------------------------*/
 MAKEPRIM(2fetch) {
@@ -408,20 +408,20 @@ MAKEPRIM(2store) {
     m[adr+1] = val1;
 }
 MAKEPRIM(2rget) {
-	R_SAVE();
+    R_SAVE();
     Cell w2 = dataPop(c, m);
     Cell w1 = dataPop(c, m);
     funcPush(c, m, w1);
     funcPush(c, m, w2);
-	R_RESTORE();
+    R_RESTORE();
 }
 MAKEPRIM(2rsend) {
-	R_SAVE();
+    R_SAVE();
     Cell w2 = funcPop(c, m);
     Cell w1 = funcPop(c, m);
     dataPush(c, m, w1);
     dataPush(c, m, w2);
-	R_RESTORE();
+    R_RESTORE();
 }
 /*---------------------------------------------*/
 MAKEPRIM(count) {
@@ -488,12 +488,14 @@ MAKEPRIM(udotstack) {
     printf(" |");
 }
 MAKEPRIM(dotstackreturn) {
+    R_SAVE();
     unsigned stacksize = m[c->fstack_ptr]-(c->fstack_start);
     printf(" R| s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
         printf(" %d", m[c->fstack_start+i]);
     }
     printf(" |");
+    R_RESTORE();
 }
 MAKEPRIM(udotstackreturn) {
     unsigned stacksize = m[c->fstack_ptr]-(c->fstack_start);
@@ -627,61 +629,61 @@ MAKEPRIM(2tuck) {
 /*---------------------------------------------*/
 // R( w -- )
 MAKEPRIM(rdrop) {
-	R_SAVE();
+    R_SAVE();
     funcPop(c, m);
-	R_RESTORE();
+    R_RESTORE();
 }
 // R( w1 w2 -- w2)
 MAKEPRIM(rnip) {
-	R_SAVE();
+    R_SAVE();
     Cell w2 = funcPop(c, m);
     funcPop(c, m);
     funcPush(c, m, w2);
-	R_RESTORE();
+    R_RESTORE();
 }
 // R( w -- w w)
 MAKEPRIM(rdup) {
-	R_SAVE();
+    R_SAVE();
     Cell w1 = funcPeek(c, m);
     funcPush(c, m, w1);
-	R_RESTORE();
+    R_RESTORE();
 }
 // R( w1 w2 -- w1 w2 w1)
 MAKEPRIM(rover) {
-	R_SAVE();
+    R_SAVE();
     Cell w2 = funcPop(c, m);
     Cell w1 = funcPeek(c, m);
     funcPush(c, m, w2);
     funcPush(c, m, w1);
-	R_RESTORE();
+    R_RESTORE();
 }
 // R( w1 w2 -- w2 w1)
 MAKEPRIM(rswap) {
-	R_SAVE();
+    R_SAVE();
     Cell w2 = funcPop(c, m);
     Cell w1 = funcPop(c, m);
     funcPush(c, m, w2);
     funcPush(c, m, w1);
-	R_RESTORE();
+    R_RESTORE();
 }
 // R( w1 w2 w3 -- w2 w3 w1)
 MAKEPRIM(rrot) {
-	R_SAVE();
+    R_SAVE();
     Cell w3 = funcPop(c, m);
     Cell w2 = funcPop(c, m);
     Cell w1 = funcPop(c, m);
     funcPush(c, m, w2);
     funcPush(c, m, w3);
     funcPush(c, m, w1);
-	R_RESTORE();
+    R_RESTORE();
 }
 // R( w1 w2 -- w2 w1 w2)
 MAKEPRIM(rtuck) {
-	R_SAVE();
+    R_SAVE();
     Cell w2 = funcPop(c, m);
     Cell w1 = funcPop(c, m);
     funcPush(c, m, w2);
     funcPush(c, m, w1);
     funcPush(c, m, w2);
-	R_RESTORE();
+    R_RESTORE();
 }
