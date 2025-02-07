@@ -93,8 +93,8 @@
     SWAP !      ( set len )
 ;
 
-: I r> r> DUP >r >r ;
-: +I r> r> + >r >r ;
+: I r> r> DUP >r SWAP >r ;
+: +I r> SWAP r> + >r >r ;
 
 : COUNT_DIGITS ( x -- number_of_digits_of_x )
     1 SWAP
@@ -105,7 +105,7 @@
     DROP
 ;
 
-: ISVAR ( xt -- is_it_a_properly_declared_variable) 2 + @ 28 rshift ;
+: ISVAR ( xt -- is_it_a_properly_declared_variable) 2 + @ 28 rshift 8 and ;
 
 ( This XT-SEE is the worst forth I have ever seen or written, pending a refactoring)
 : XT-SEE ( xt -- )
@@ -138,7 +138,7 @@
 
         DUP RAW_VAR_SIZE 4 DO
             4 SPACES
-            DUP r> DUP >r 3 + + ( get ivar and add it to current XT )
+            DUP I 3 + + ( get ivar and add it to current XT )
             STRLIT" 0x" @ X. CR
         LOOP
     ELSE
@@ -147,13 +147,13 @@
         DUP RAW_VAR_SIZE 0 DO
             2 SPACES
             STRLIT" ["
-            r> DUP >r
+            I
             DUP .
             COUNT_DIGITS DUP 4 < IF 4 SWAP - SPACES ELSE 0 SPACES THEN
             STRLIT" ]"
             SWAP DUP 2 * SPACES SWAP ( Appropiate indentation level )
 
-            DUP r> DUP >r 3 + + ( get ivar and add it to current XT )
+            DUP I 3 + + ( get ivar and add it to current XT )
             DUP @ 0 = IF
                 STRLIT" UNKNOWN" CR
             THEN
@@ -162,44 +162,44 @@
             THEN
             DUP @ 2 = IF
                 STRLIT" PRIMITIVE:"
-                1 r> + >r
+                1 +i
                 DUP 1 + @ .
                 CR
             THEN
             DUP @ 3 = IF
                 STRLIT" NUMBER:"
-                1 r> + >r
+                1 +i
                 DUP 1 + @ .
                 CR
             THEN
             DUP @ 4 = IF
                 STRLIT" JUMP FORWARD BY:"
-                1 r> + >r
+                1 +i
                 DUP 1 + @ .
                 CR
                 ( ROT 1 + ROT ROT \increment indentation level )
             THEN
             DUP @ 5 = IF
                 STRLIT" JUMP BACKWARD BY:"
-                1 r> + >r
+                1 +i
                 DUP 1 + @ .
                 CR
             THEN
             DUP @ 6 = IF
                 STRLIT" COND JUMP FORWARD BY:"
-                1 r> + >r
+                1 +i
                 DUP 1 + @ .
                 CR
             THEN
             DUP @ 7 = IF
                 STRLIT" COND JUMP BACKWARD BY:"
-                1 r> + >r
+                1 +i
                 DUP 1 + @ .
                 CR
             THEN
             DUP @ 8 = IF
                 STRLIT" ABSOLUTE JUMP TO:"
-                1 r> + >r
+                1 +i
                 DUP 1 + @ .
                 CR
             THEN

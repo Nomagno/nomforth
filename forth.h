@@ -68,6 +68,7 @@ typedef void(*forthFunc)(Ctx*,Cell*);
 typedef struct {
     forthFunc func;
     _Bool priority;
+    _Bool forbid_tco;
     char *name;
 } PrimitiveData;
 
@@ -94,7 +95,7 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define CA(...) (Cell[]){__VA_ARGS__}
 
 Cell addToPad(Ctx *c, Cell *m, char *s, unsigned name_size);
-void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size, _Bool p,
+void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size, _Bool p, _Bool forbid_tco,
               Cell *data, unsigned data_size);
 Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size);
 Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size);

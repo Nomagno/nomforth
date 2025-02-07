@@ -19,12 +19,12 @@ MAKEPRIM(colon) {
     if (w_size == 0) { printf("WARNING: word created with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    makeWord(c, m, lorig, w_size, 0, NULL, 0);
+    makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
 
     m[c->compile_state_ptr] = 1;
 }
 MAKEPRIM(colonAnonymous) {
-    makeWord(c, m, "\0", 0, 0, NULL, 0);
+    makeWord(c, m, "\0", 0, 0, 0, NULL, 0);
     m[c->compile_state_ptr] = 1;
 }
 MAKEPRIM(semicolon){
@@ -35,6 +35,9 @@ MAKEPRIM(semicolon){
 }
 MAKEPRIM(immediate) {
     m[m[c->dict_pos_ptr]+2] |= 1 << 24;
+}
+MAKEPRIM(forbid_tco) {
+    m[m[c->dict_pos_ptr]+2] |= 1 << 30;
 }
 MAKEPRIM(leftbracket) {
     m[c->compile_state_ptr] = 0;
@@ -116,7 +119,7 @@ MAKEPRIM(emptyvariable) {
     if (w_size == 0) { printf("WARNING: 'VARIABLE' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    makeWord(c, m, lorig, w_size, 0, NULL, 0);
+    makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
     m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable by setting highest bit*/
 }
 MAKEPRIM(variable) {
@@ -126,7 +129,7 @@ MAKEPRIM(variable) {
     char *lorig = c->inter_str-w_size;
 
     unsigned size = dataPop(c, m);
-    makeWord(c, m, lorig, w_size, 0, NULL, 0);
+    makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
     m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable*/
     appendWord(c, m, CA(t_num, m[c->dict_pos_ptr]+7), 2); // +3, pointer to first empty cell
     appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
@@ -255,7 +258,7 @@ MAKEPRIM(defer) {
     if (w_size == 0) { printf("WARNING: 'DEFER' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    makeWord(c, m, lorig, w_size, 0, CA(t_end, t_end), 2);
+    makeWord(c, m, lorig, w_size, 0, 0, CA(t_end, t_end), 2);
 }
 MAKEPRIM(postpone) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);

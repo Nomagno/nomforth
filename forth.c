@@ -24,7 +24,7 @@ Cell addToPad(Ctx *c, Cell *m, char *s, unsigned name_size) {
 }
 
 void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size,
-              _Bool p, Cell *data, unsigned data_size) {
+              _Bool p, _Bool forbid_tco, Cell *data, unsigned data_size) {
     Cell prev_loc = m[c->dict_pos_ptr];
     Cell prev_size = (prev_loc == 0) ? DICT_START : (3+(m[prev_loc+2] & 0x0000FFFF));
     m[c->dict_pos_ptr] = prev_loc + + prev_size;
@@ -32,7 +32,7 @@ void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size,
     Cell curr_loc = m[c->dict_pos_ptr];
     m[curr_loc] = prev_loc;
     m[curr_loc+1] = addToPad(c, m, name, name_size);
-    m[curr_loc+2] = (p << 24) | (data_size & 0x0000FFFF);
+    m[curr_loc+2] = (forbid_tco << 30) | (p << 24) | (data_size & 0x0000FFFF);
     for (unsigned i = 0; i < data_size; i++)
         m[curr_loc+3+i] = data[i];
 }
@@ -161,7 +161,6 @@ void executeForeign(Ctx *c, Cell *m, Cell id) {
 
 void executeWord(Ctx *c, Cell *m, Cell w) { 
     m[c->program_counter_ptr] = w+3;
-    m[c->program_counter_ptr] += (m[w+2] & 0x00FF0000) >> 8;
 
     _Bool reached_end = 0;
     while (!reached_end) {
@@ -218,15 +217,16 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             }
             break;
         default:
-            if (m[contents+1] != t_end) { // If it's a tail call no need to push another stack frame
+            if ((m[m[contents]+2] & 0x40000000) || (m[contents+1] != t_end)) {
                 funcPush(c, m, m[c->program_counter_ptr]);
             } else {
-                //printf("Doing tail recursion\n");
+                // If it's a tail call no need to push another stack frame,
+                // Unless the word is forbidden from being Tail Call Optimized
+                //printf("Doing tail recursion: %X\n", m[m[contents]+2]);
             }
             Cell new_w = m[contents]; 
             contents = new_w+3;
             m[c->program_counter_ptr] = contents;
-            m[c->program_counter_ptr] += (m[new_w+2] & 0x00FF0000) >> 8;
             break;
         }
     }
@@ -261,7 +261,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
         
         Cell w = findWord(c, m, 'c', lorig, w_size);
         if (w != 0) {
-            _Bool priority = m[w+2]>>24 & 0x00FF; /*Highest nibble is for auxiliary info, second highest is for immediacy info*/
+            _Bool priority = m[w+2]>>24 & 0x0F; /*Highest nibble is for auxiliary info, second highest is for immediacy info*/
             if (priority || m[c->compile_state_ptr] == 0) {
                 dataPush(c, m, w);
                 PRIM(execute)(c, m);
@@ -276,7 +276,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
             if (l_c != 0) *c->inter_str = ' ';
 
             if (endptr-lorig == w_size) {
-                if ((m[w+2]>>24 & 0x00FF) != 0 || m[c->compile_state_ptr] == 0)
+                if ((m[w+2]>>24 & 0x0F) != 0 || m[c->compile_state_ptr] == 0)
                     dataPush(c, m, val);
                 else {
                     dataPush(c, m, val);
@@ -309,6 +309,7 @@ void init(Ctx *c, Cell *m) {
     m[c->fstack_ptr] = FSTACK_START;
     m[c->dict_pos_ptr] = NILPTR;
     m[c->pad_pos_ptr] = PAD_START;
+    m[c->flags_ptr] = 0;
 
     initPrimitives(c, m);
 }
@@ -333,7 +334,7 @@ void initPrimitives(Ctx *c, Cell *m) {
     {
         if (primTable[i].func == NULL) { }
         else {
-            makeWord(c, m, primTable[i].name, strlen(primTable[i].name), primTable[i].priority, CA(t_primitive, i, t_end), 3);
+            makeWord(c, m, primTable[i].name, strlen(primTable[i].name), primTable[i].priority, primTable[i].forbid_tco, CA(t_primitive, i, t_end), 3);
         }
     }
 }
