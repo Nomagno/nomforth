@@ -1,3 +1,7 @@
+( Nomagno's Forth example )
+( Copyright 2025 Nomagno )
+( MIT License )
+
 \ Make sure to first load core.fs
 \ A nice way to test the program is simply to do:
 \ $ cat core.fs example.fs | /path/to/executable

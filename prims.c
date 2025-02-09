@@ -13,6 +13,7 @@
 
 PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 
+/* The forth core words: declare a new word, and end it */
 MAKEPRIM(colon) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
@@ -26,29 +27,14 @@ MAKEPRIM(colon) {
 MAKEPRIM(colonAnonymous) {
     makeWord(c, m, "\0", 0, 0, 0, NULL, 0);
     m[c->compile_state_ptr] = 1;
+    dataPush(c, m, m[c->dict_pos_ptr]);
 }
 MAKEPRIM(semicolon){
     appendWord(c, m, CA(t_end), 1);
     m[c->compile_state_ptr] = 0;
-    if (m[m[c->dict_pos_ptr]+1] == 0)
-        dataPush(c, m, m[c->dict_pos_ptr]);
 }
-MAKEPRIM(immediate) {
-    m[m[c->dict_pos_ptr]+2] |= 1 << 24;
-}
-MAKEPRIM(forbid_tco) {
-    m[m[c->dict_pos_ptr]+2] |= 1 << 30;
-}
-MAKEPRIM(leftbracket) {
-    m[c->compile_state_ptr] = 0;
-}
-MAKEPRIM(rightbracket) {
-    m[c->compile_state_ptr] = 1;
-}
-MAKEPRIM(recurse) {
-    dataPush(c, m, m[c->dict_pos_ptr]);
-    PRIM(comma)(c, m);
-}
+/* Comments*/
+/*---------------------------------------------*/
 MAKEPRIM(leftparen) {
     int w_size = advanceTo(&c->inter_str, ')', 1);
     if (w_size < 0) { w_size = -w_size; }
@@ -61,108 +47,30 @@ MAKEPRIM(backslash) {
     if (w_size == 0) { }
     else { c->inter_str++; }
 }
+/* Manipulate words*/
 /*---------------------------------------------*/
-MAKEPRIM(exit) {
-    appendWord(c, m, CA(t_end), 1);
-}
-MAKEPRIM(if) {
-    Cell forward_ref = appendWord(c, m, CA(t_condreljump, 0), 2);
-    dataPush(c, m, forward_ref);
-}
-MAKEPRIM(ahead) {
-    Cell forward_ref = appendWord(c, m, CA(t_reljump, 0), 2);
-    dataPush(c, m, forward_ref);
-}
-MAKEPRIM(then){
-    Cell current_word = m[c->dict_pos_ptr];
-    Cell word_size = 3;
-    Cell data_size = m[m[c->dict_pos_ptr]+2] & 0x0000FFFF;
-    Cell back_ref = dataPop(c, m);
-
-    // What we're calculating is the position of the next word.
-    // This works because, at minimum, we will have the end-of-word tag
-    // so we know we don't jump outside the word.
-    // We add 1 at the end because we're interested in the second field,
-    // as back_ref is calculated based on second field as well,
-    // so if we add one we can just substract them to get
-    // the relative jump size.
-    Cell future_loc = current_word+word_size+data_size;
-    m[back_ref] = future_loc-(back_ref-1);
-}
-MAKEPRIM(begin) {
-    Cell current_word = m[c->dict_pos_ptr];
-    Cell word_size = 3;
-    Cell data_size = m[m[c->dict_pos_ptr]+2] & 0x0000FFFF;
-    Cell future_loc = current_word+word_size+data_size;
-    dataPush(c, m, future_loc);
-}
-MAKEPRIM(again){
-    Cell back_ref = dataPop(c, m);
-    Cell last_cell = appendWord(c, m, CA(t_reljumpback, 0), 2);
-    last_cell -= 1;
- m[last_cell+1] = last_cell-back_ref;
-}
-MAKEPRIM(until){
-    Cell back_ref = dataPop(c, m);
-    Cell last_cell = appendWord(c, m, CA(t_condreljumpback, 0), 2);
-    last_cell -= 1;
- m[last_cell+1] = last_cell-back_ref;
-}
-/*---------------------------------------------*/
-MAKEPRIM(variablerawsize) {
-    Cell w_cell = dataPop(c, m);
-    dataPush(c, m, m[w_cell+2] & 0x0000FFFF);
-}
-MAKEPRIM(emptyvariable) {
+MAKEPRIM(emptyword) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'VARIABLE' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'EMPTY_WORD' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
     makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
-    m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable by setting highest bit*/
 }
-MAKEPRIM(variable) {
+MAKEPRIM(create) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'VARIABLE' called with no name\n"); }
+    if (w_size == 0) { printf("WARNING: 'CREATE' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    unsigned size = dataPop(c, m);
     makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
     m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable*/
     appendWord(c, m, CA(t_num, m[c->dict_pos_ptr]+7), 2); // +3, pointer to first empty cell
     appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
-    for (unsigned i = 0; i < size; i++) {
-        appendWord(c, m, CA(0), 1);
-    }
-}
-MAKEPRIM(literal) {
-    Cell popped_num = dataPop(c, m);
-    appendWord(c, m, CA(t_num, popped_num), 2);
 }
 MAKEPRIM(comma) {
     Cell val = dataPop(c, m);
     appendWord(c, m, CA(val), 1);
-}
-MAKEPRIM(allot) {
-    int size = dataPop(c, m);
-    for (int i = 0; i < size; i++) {
-        appendWord(c, m, CA(0), 1);
-    }
-}
-MAKEPRIM(here) {
- dataPush(c, m, m[c->dict_pos_ptr]+3+(m[m[c->dict_pos_ptr]+2] & 0x0000FFFF));
-}
-MAKEPRIM(getwordbodysize) {
-    Cell xt = dataPop(c, m);
-    dataPush(c, m, (m[xt+2] & 0x0000FFFF)-4);
-}
-MAKEPRIM(getwordbody) {
-    Cell xt = dataPop(c, m);
-    //Must have standard structure created by VARIABLE
-    if ((m[xt+2] & 0x0000FFFF) > 0) dataPush(c, m, xt+7);
-    else dataPush(c, m, 0);
 }
 MAKEPRIM(worddoesprim) {
     Cell current_word = m[c->dict_pos_ptr];
@@ -175,14 +83,27 @@ MAKEPRIM(worddoes) {
     appendWord(c, m, CA(appended_w), 1);
     appendWord(c, m, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
-MAKEPRIM(move) {
-    Cell n = dataPop(c, m);
-    Cell adr2 = dataPop(c, m);
-    Cell adr1 = dataPop(c, m);
-    for (unsigned i = 0; i < n; i++) {
-        m[adr2+i] = m[adr1+i];
-    }
+/* Memory manipulation, returnstack-datastack interaction */
+/*---------------------------------------------*/
+MAKEPRIM(fetch) {
+    dataPush(c, m, m[dataPop(c, m)]);
 }
+MAKEPRIM(store) {
+    Cell adr = dataPop(c, m);
+    Cell val = dataPop(c, m);
+    m[adr] = val;
+}
+MAKEPRIM(rget) {
+    R_SAVE();
+    funcPush(c, m, dataPop(c, m));
+    R_RESTORE();
+}
+MAKEPRIM(rsend) {
+    R_SAVE();
+    dataPush(c, m, funcPop(c, m));
+    R_RESTORE();
+}
+/* Reading data from the input stream*/
 /*---------------------------------------------*/
 MAKEPRIM(bracket_char_bracket) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
@@ -234,10 +155,6 @@ MAKEPRIM(find) {
     if (found_word == 0) { dataPush(c, m, obtained_str); dataPush(c, m, 0); }
     else { dataPush(c, m, found_word); dataPush(c, m, ((m[found_word+2] >> 24) != 0) ? 1 : -1); }
 }
-MAKEPRIM(who) {
-    Cell obtained_xt = dataPop(c, m);
-    dataPush(c, m, m[obtained_xt+1]);
-}
 MAKEPRIM(is) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
@@ -274,6 +191,8 @@ MAKEPRIM(execute) {
     Cell popped_xt = dataPop(c, m);
     executeWord(c, m, popped_xt);
 }
+/* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
+/*Trivial mapping of C arithmetic operators*/
 /*---------------------------------------------*/
 MAKEPRIM(add){
  Cell w1 = dataPop(c, m);
@@ -377,70 +296,21 @@ MAKEPRIM(geq){
  Cell w2 = dataPop(c, m);
  dataPush(c, m, BOOL(w2>=w1));
 }
-/*---------------------------------------------*/
-MAKEPRIM(fetch) {
-    dataPush(c, m, m[dataPop(c, m)]);
-}
-MAKEPRIM(store) {
-    Cell adr = dataPop(c, m);
-    Cell val = dataPop(c, m);
-    m[adr] = val;
-}
-MAKEPRIM(rget) {
-    R_SAVE();
-    funcPush(c, m, dataPop(c, m));
-    R_RESTORE();
-}
-MAKEPRIM(rsend) {
-    R_SAVE();
-    dataPush(c, m, funcPop(c, m));
-    R_RESTORE();
-}
-/*---------------------------------------------*/
-MAKEPRIM(2fetch) {
-    Cell adr = dataPop(c, m);
-    dataPush(c, m, m[adr]);
-    dataPush(c, m, m[adr+1]);
-}
-MAKEPRIM(2store) {
-    Cell adr = dataPop(c, m);
-    Cell val2 = dataPop(c, m);
-    Cell val1 = dataPop(c, m);
-    // Yes, they are stored in reverse according to the standard
-    m[adr] = val2;
-    m[adr+1] = val1;
-}
-MAKEPRIM(2rget) {
-    R_SAVE();
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    funcPush(c, m, w1);
-    funcPush(c, m, w2);
-    R_RESTORE();
-}
-MAKEPRIM(2rsend) {
-    R_SAVE();
-    Cell w2 = funcPop(c, m);
-    Cell w1 = funcPop(c, m);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-    R_RESTORE();
-}
+/*Printing strings, numbers, memory, etc.*/
 /*---------------------------------------------*/
 MAKEPRIM(count) {
     Cell obtained_str = dataPop(c, m);
     dataPush(c, m, obtained_str+1);
     dataPush(c, m, m[obtained_str]-1);
 }
-MAKEPRIM(bl) {
-    dataPush(c, m, 0x20);
-}
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c, m);
-    if(ch < 0x21 || ch > 0x7E) {
-        printf("[0x%X]", ch);
-    } else {
+    if (ch >= 0x20 || ch <= 0x7E) {
         printf("%c", ch);
+    } else if (ch == 0x0A) {
+        printf("%c", ch);
+    } else {
+        printf("[0x%X]", ch);
     }
 }
 MAKEPRIM(type){
@@ -508,6 +378,7 @@ MAKEPRIM(udotstackreturn) {
     }
     printf(" |");
 }
+/*Simple data stack manipulation*/
 /*---------------------------------------------*/
 // ( w -- )
 MAKEPRIM(drop) {
@@ -555,7 +426,37 @@ MAKEPRIM(tuck) {
     dataPush(c, m, w1);
     dataPush(c, m, w2);
 }
+/* Pair-wise data stack manipulation*/
 /*---------------------------------------------*/
+MAKEPRIM(2fetch) {
+    Cell adr = dataPop(c, m);
+    dataPush(c, m, m[adr]);
+    dataPush(c, m, m[adr+1]);
+}
+MAKEPRIM(2store) {
+    Cell adr = dataPop(c, m);
+    Cell val2 = dataPop(c, m);
+    Cell val1 = dataPop(c, m);
+    // Yes, they are stored in reverse according to the standard
+    m[adr] = val2;
+    m[adr+1] = val1;
+}
+MAKEPRIM(2rget) {
+    R_SAVE();
+    Cell w2 = dataPop(c, m);
+    Cell w1 = dataPop(c, m);
+    funcPush(c, m, w1);
+    funcPush(c, m, w2);
+    R_RESTORE();
+}
+MAKEPRIM(2rsend) {
+    R_SAVE();
+    Cell w2 = funcPop(c, m);
+    Cell w1 = funcPop(c, m);
+    dataPush(c, m, w1);
+    dataPush(c, m, w2);
+    R_RESTORE();
+}
 // ( w1 w2 -- )
 MAKEPRIM(2drop) {
     dataPop(c, m);
@@ -629,6 +530,7 @@ MAKEPRIM(2tuck) {
     dataPush(c, m, w3);
     dataPush(c, m, w4);
 }
+/* Return stack manipulation */
 /*---------------------------------------------*/
 // R( w -- )
 MAKEPRIM(rdrop) {

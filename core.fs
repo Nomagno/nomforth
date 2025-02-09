@@ -1,6 +1,6 @@
-\ Nomagno's Forth composite standard words
-\ Copyright (c) 2025 Nomagno
-\ MIT License
+( Nomagno's Forth complex standard words )
+( Copyright 2025 Nomagno )
+( MIT License )
 
 
 : WHILE ( dest -- orig dest / flag -- )
@@ -18,25 +18,6 @@
     SWAP            ( put orig1 back on top )
     POSTPONE THEN       ( resolve forward branch from orig1 )
 ; immediate
-
-
-: ' ( "name" -- xt ) BL WORD FIND 
-    DUP 0 = IF ( if the word doesn't exist, return 0)
-        DROP DROP 0
-    ELSE
-        DROP
-    THEN
-;
-
-: ['] ( compilation: "name" --; run-time: -- xt ) ' LIT, ; immediate
-: PPW
-    ' LIT,
-    ['] , ,
-; immediate
-
-: LITERAL LIT, ; immediate
-
-: CREATE 0 VARIABLE ;
 
 : CELLS ;
 : CELL 1 ;
@@ -65,7 +46,7 @@
 ;
 
 
-: DO ( -- dest / D: l i -- , R: -- l i )
+: ?DO ( -- dest / D: l i -- , R: -- l i )
     POSTPONE BEGIN
     PPW 2>R
 ; immediate
@@ -80,6 +61,37 @@
               ( DID NOT LOOP, THE 2>R WAS NOT EXECUTED YET )
 ; immediate
 
+: I r> r> DUP >r SWAP >r ; forbid_tco
+: +I r> SWAP r> + >r >r ; forbid_tco
+
+: MOVE ( addr1 addr2 u -- )
+       ( copies u cells starting from address 1 intro address 2)
+    0 ?DO
+        ( addr1+i addr2+i )
+        2DUP
+        SWAP @
+        SWAP !
+        1 + SWAP 1 + SWAP
+    LOOP
+    2DROP
+;
+
+: ALLOT ( n -- )
+        ( allots n cells of space in dictionary, )
+        (  or release if negative)
+    DUP 0 >= IF
+        0 ?DO
+            0 ,
+        LOOP
+    ELSE
+        ( As of yet, this is unimplemented.)
+        ( The HERE pointer is not the native way storage is represented in )
+        ( nomforth, so there is currently no easy way to way to modify it either)
+        EXIT
+    THEN
+;
+
+
 : BEGIN-STRUCTURE ( -- addr 0 ; Exec -- size )
     CREATE
     HERE 0 0 , ( Mark stack, put down empty value )
@@ -93,9 +105,6 @@
     SWAP !      ( set len )
 ;
 
-: I r> r> DUP >r SWAP >r ;
-: +I r> SWAP r> + >r >r ;
-
 : COUNT_DIGITS ( x -- number_of_digits_of_x )
     1 SWAP
     BEGIN DUP 9 > WHILE
@@ -104,6 +113,18 @@
     REPEAT
     DROP
 ;
+
+( "name" --  )
+: VARIABLE CREATE 0 , ;
+
+
+( n "name" --  )
+: CONSTANT ( -- )
+    EMPTY_WORD
+    LIT,
+    C_T_END_CONST ,
+;
+
 
 : ISVAR ( xt -- is_it_a_properly_declared_variable) 2 + @ 28 rshift 8 and ;
 
@@ -136,7 +157,7 @@
         2 SPACES
         STRLIT" Data dump of var:" CR
 
-        DUP RAW_VAR_SIZE 4 DO
+        DUP RAW_VAR_SIZE 4 ?DO
             4 SPACES
             DUP I 3 + + ( get ivar and add it to current XT )
             STRLIT" 0x" @ X. CR
@@ -144,7 +165,7 @@
     ELSE
         STRLIT" : "
         DUP WHO COUNT TYPE CR
-        DUP RAW_VAR_SIZE 0 DO
+        DUP RAW_VAR_SIZE 0 ?DO
             2 SPACES
             STRLIT" ["
             I

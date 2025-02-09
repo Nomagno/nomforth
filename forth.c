@@ -279,8 +279,13 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
                 if ((m[w+2]>>24 & 0x0F) != 0 || m[c->compile_state_ptr] == 0)
                     dataPush(c, m, val);
                 else {
+                    // Tag for literal
+                    dataPush(c, m, 3);
+                    PRIM(comma)(c, m);
+
+                    // Actual value
                     dataPush(c, m, val);
-                    PRIM(literal)(c, m);
+                    PRIM(comma)(c, m);
                 }
             } else {
                 printf("{ERROR: unknown word %.*s}\n", w_size, lorig);

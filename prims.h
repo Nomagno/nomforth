@@ -8,34 +8,19 @@
 MAKEPRIM(colon);
 MAKEPRIM(colonAnonymous);
 MAKEPRIM(semicolon);
-MAKEPRIM(immediate);
-MAKEPRIM(forbid_tco);
-MAKEPRIM(leftbracket);
-MAKEPRIM(rightbracket);
-MAKEPRIM(recurse);
 MAKEPRIM(leftparen);
 MAKEPRIM(backslash);
 
-MAKEPRIM(exit);
-MAKEPRIM(if);
-MAKEPRIM(ahead);
-MAKEPRIM(then);
-MAKEPRIM(begin);
-MAKEPRIM(again);
-MAKEPRIM(until);
-
-MAKEPRIM(variablerawsize);
-MAKEPRIM(emptyvariable);
-MAKEPRIM(variable);
-MAKEPRIM(literal);
+MAKEPRIM(emptyword);
+MAKEPRIM(create);
 MAKEPRIM(comma);
-MAKEPRIM(allot);
-MAKEPRIM(here);
-MAKEPRIM(getwordbodysize);
-MAKEPRIM(getwordbody);
 MAKEPRIM(worddoesprim);
 MAKEPRIM(worddoes);
-MAKEPRIM(move);
+
+MAKEPRIM(fetch);
+MAKEPRIM(store);
+MAKEPRIM(rget);
+MAKEPRIM(rsend);
 
 MAKEPRIM(bracket_char_bracket);
 MAKEPRIM(char);
@@ -43,7 +28,6 @@ MAKEPRIM(word);
 MAKEPRIM(parse);
 MAKEPRIM(parse_name);
 MAKEPRIM(find);
-MAKEPRIM(who);
 MAKEPRIM(is);
 MAKEPRIM(defer);
 MAKEPRIM(postpone);
@@ -72,22 +56,11 @@ MAKEPRIM(leq);
 MAKEPRIM(gr);
 MAKEPRIM(geq);
 
-MAKEPRIM(fetch);
-MAKEPRIM(store);
-MAKEPRIM(rget);
-MAKEPRIM(rsend);
-
-MAKEPRIM(2fetch);
-MAKEPRIM(2store);
-MAKEPRIM(2rget);
-MAKEPRIM(2rsend);
-
 MAKEPRIM(count);
 MAKEPRIM(emit);
 MAKEPRIM(type);
 MAKEPRIM(cr);
 MAKEPRIM(spaces);
-MAKEPRIM(bl);
 MAKEPRIM(dot);
 MAKEPRIM(udot);
 MAKEPRIM(xdot);
@@ -105,6 +78,10 @@ MAKEPRIM(swap);
 MAKEPRIM(rot);
 MAKEPRIM(tuck);
 
+MAKEPRIM(2fetch);
+MAKEPRIM(2store);
+MAKEPRIM(2rget);
+MAKEPRIM(2rsend);
 MAKEPRIM(2drop);
 MAKEPRIM(2nip);
 MAKEPRIM(2dup);
@@ -125,34 +102,20 @@ MAKEPRIM(rtuck);
     {PRIM(colon), 0, 0, ":"}, \
     {PRIM(colonAnonymous), 0, 0, ":NONAME"}, \
     {PRIM(semicolon), 1, 0, ";"}, \
-    {PRIM(immediate), 0, 0, "IMMEDIATE"}, \
-    {PRIM(forbid_tco), 0, 0, "FORBID_TCO"}, \
-    {PRIM(leftbracket), 1, 0, "["}, \
-    {PRIM(rightbracket), 0, 0, "]"}, \
-    {PRIM(recurse), 1, 0, "RECURSE"}, \
+                            \
     {PRIM(leftparen), 1, 0, "("}, \
     {PRIM(backslash), 1, 0, "\\"}, \
                             \
-    {PRIM(exit), 1, 0, "EXIT"}, \
-    {PRIM(if), 1, 0, "IF"}, \
-    {PRIM(ahead), 1, 0, "AHEAD"}, \
-    {PRIM(then), 1, 0, "THEN"}, \
-    {PRIM(begin), 1, 0, "BEGIN"}, \
-    {PRIM(again), 1, 0, "AGAIN"}, \
-    {PRIM(until), 1, 0, "UNTIL"}, \
-                            \
-    {PRIM(variablerawsize), 0, 0, "RAW_VAR_SIZE"}, \
-    {PRIM(emptyvariable), 0, 0, "EMPTY_VAR"}, \
-    {PRIM(variable), 0, 0, "VARIABLE"}, \
-    {PRIM(literal), 0, 0, "LIT,"}, \
+    {PRIM(emptyword), 0, 0, "EMPTY_WORD"}, \
+    {PRIM(create), 0, 0, "CREATE"}, \
     {PRIM(comma), 0, 0, ","}, \
-    {PRIM(allot), 0, 0, "ALLOT"}, \
-    {PRIM(here), 0, 0, "HERE"}, \
-    {PRIM(getwordbodysize), 0, 0, ">SIZE"}, \
-    {PRIM(getwordbody), 0, 0, ">BODY"}, \
     {PRIM(worddoesprim), 0, 0, "DOES>PRIM"}, \
     {PRIM(worddoes), 1, 0, "DOES>"}, \
-    {PRIM(move), 0, 0, "MOVE"}, \
+                            \
+    {PRIM(fetch), 0, 0, "@"}, \
+    {PRIM(store), 0, 0, "!"}, \
+    {PRIM(rget), 0, 1, ">R"}, \
+    {PRIM(rsend), 0, 1, "R>"}, \
                             \
     {PRIM(bracket_char_bracket), 1, 0, "[CHAR]"}, \
     {PRIM(char), 1, 0, "CHAR"}, \
@@ -160,7 +123,6 @@ MAKEPRIM(rtuck);
     {PRIM(parse), 0, 0, "PARSE"}, \
     {PRIM(parse_name), 0, 0, "PARSE-NAME"}, \
     {PRIM(find), 0, 0, "FIND"}, \
-    {PRIM(who), 0, 0, "WHO"}, \
     {PRIM(is), 0, 0, "IS"}, \
     {PRIM(defer), 0, 0, "DEFER"}, \
     {PRIM(postpone), 1, 0, "POSTPONE"}, \
@@ -188,18 +150,7 @@ MAKEPRIM(rtuck);
     {PRIM(gr), 0, 0, ">"}, \
     {PRIM(geq), 0, 0, ">="}, \
                             \
-    {PRIM(fetch), 0, 0, "@"}, \
-    {PRIM(store), 0, 0, "!"}, \
-    {PRIM(rget), 0, 1, ">R"}, \
-    {PRIM(rsend), 0, 1, "R>"}, \
-                            \
-    {PRIM(2fetch), 0, 0, "2@"}, \
-    {PRIM(2store), 0, 0, "2!"}, \
-    {PRIM(2rget), 0, 1, "2>R"}, \
-    {PRIM(2rsend), 0, 1, "2R>"}, \
-                            \
     {PRIM(count), 0, 0, "COUNT"}, \
-    {PRIM(bl), 0, 0, "BL"}, \
     {PRIM(emit), 0, 0, "EMIT"}, \
     {PRIM(type), 0, 0, "TYPE"}, \
     {PRIM(cr), 0, 0, "CR"}, \
@@ -221,6 +172,10 @@ MAKEPRIM(rtuck);
     {PRIM(rot), 0, 0, "ROT"}, \
     {PRIM(tuck), 0, 0, "TUCK"}, \
                             \
+    {PRIM(2fetch), 0, 0, "2@"}, \
+    {PRIM(2store), 0, 0, "2!"}, \
+    {PRIM(2rget), 0, 1, "2>R"}, \
+    {PRIM(2rsend), 0, 1, "2R>"}, \
     {PRIM(2drop), 0, 0, "2DROP"}, \
     {PRIM(2nip), 0, 0, "2NIP"}, \
     {PRIM(2dup), 0, 0, "2DUP"}, \
