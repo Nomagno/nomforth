@@ -9,10 +9,10 @@
     31 @
 ;
 
-: IMMEDIATE ( -- )
+: MARK_VAR ( -- )
     DICT_CURRENT 2 +
     DUP @
-    1 24 LSHIFT    
+    1 31 LSHIFT    
     OR
     SWAP !
 ;
@@ -21,6 +21,22 @@
     DICT_CURRENT 2 +
     DUP @
     1 30 LSHIFT    
+    OR
+    SWAP !
+;
+
+: FORBID_INTERPRETING ( -- )
+    DICT_CURRENT 2 +
+    DUP @
+    1 29 LSHIFT    
+    OR
+    SWAP !
+;
+
+: IMMEDIATE ( -- )
+    DICT_CURRENT 2 +
+    DUP @
+    1 28 LSHIFT    
     OR
     SWAP !
 ;
@@ -128,7 +144,7 @@
 ;
 
 : STATE C_COMPILE_STATE_ADDRESS_CONST @ ;
-: [ C_COMPILE_STATE_ADDRESS_CONST 0 SWAP @ ; immediate
+: [ C_COMPILE_STATE_ADDRESS_CONST 0 SWAP ! ; immediate
 : ] C_COMPILE_STATE_ADDRESS_CONST 1 SWAP ! ;
 
 : ' ( "name" -- xt ) BL WORD FIND 

@@ -32,7 +32,7 @@ void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size,
     Cell curr_loc = m[c->dict_pos_ptr];
     m[curr_loc] = prev_loc;
     m[curr_loc+1] = addToPad(c, m, name, name_size);
-    m[curr_loc+2] = (forbid_tco << 30) | (p << 24) | (data_size & 0x0000FFFF);
+    m[curr_loc+2] = (forbid_tco << 30) | (p << 28) | (data_size & 0x0000FFFF);
     for (unsigned i = 0; i < data_size; i++)
         m[curr_loc+3+i] = data[i];
 }
@@ -261,10 +261,22 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
         
         Cell w = findWord(c, m, 'c', lorig, w_size);
         if (w != 0) {
-            _Bool priority = m[w+2]>>24 & 0x0F; /*Highest nibble is for auxiliary info, second highest is for immediacy info*/
+            /*Highest bit is for auxiliary info,
+              second highest is for TCO permissions,
+              third highest is for interpreting permissions,
+              fourth highest is for immediacy info
+            */
+            _Bool priority = m[w+2]>>28 & 1;
+            _Bool forbid_interpreting = m[w+2]>>29 & 1;
             if (priority || m[c->compile_state_ptr] == 0) {
-                dataPush(c, m, w);
-                PRIM(execute)(c, m);
+                if (forbid_interpreting && m[c->compile_state_ptr] == 0) {
+                    printf("{ERROR: word can not be executed in interpreting mode %.*s}\n", w_size, lorig);
+                    l_c = 0;
+                    was_there_error = 1;
+                } else {
+                    dataPush(c, m, w);
+                    PRIM(execute)(c, m);
+                }
             } else {
                 dataPush(c, m, w);
                 PRIM(comma)(c, m);
@@ -276,7 +288,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
             if (l_c != 0) *c->inter_str = ' ';
 
             if (endptr-lorig == w_size) {
-                if ((m[w+2]>>24 & 0x0F) != 0 || m[c->compile_state_ptr] == 0)
+                if (m[c->compile_state_ptr] == 0)
                     dataPush(c, m, val);
                 else {
                     // Tag for literal

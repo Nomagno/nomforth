@@ -64,7 +64,7 @@ MAKEPRIM(create) {
     char *lorig = c->inter_str-w_size;
 
     makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
-    m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable*/
+    m[m[c->dict_pos_ptr]+2] |= 1 << 31; /*Mark as variable by setting highest bit*/
     appendWord(c, m, CA(t_num, m[c->dict_pos_ptr]+7), 2); // +3, pointer to first empty cell
     appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
 }

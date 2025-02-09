@@ -37,9 +37,26 @@ typedef enum {
     t_end_notailcall=11 // Return from word but ensuring this label causes no tail recursion
 } CodeType;
 
-// WORD = (Prev Name (Preference x DataSize) [Data])
-// Prev: pointer to previous entry in dict
-// Name: pointer to string in string list
+// Execution Token = Name Token = (Prev Name Header [Data])
+// Prev: pointer to previous entry in the dictionary, can be 0 for the first entry
+// Name: pointer to counter string representing the word name, can be 0 for anonymous functions
+// Header:
+//  vtip cccc pppp pppp ssss ssss ssss ssss
+//  v: If 1, this word is a "regular" variable
+//  t: If 1, this word can not be tail-call optimized
+//  i: If 1, this word can not be executed in interpreting mode
+//  c: These 4 bits are for custom user-defined data
+//  p: These 8 bits are for the word-plane. More specifically,
+//       the higher 128 planes (leftmost bit set to 1) are reserved
+//       for "shadowed copies" of words in the first 8 planes,
+//       yielding up to 16 copies per word. The lower 128 planes
+//       are for implementing alternate namespaces that must be specified
+//       before their contents become findable
+// s: these 16 bits represent the size of the code, in 32-bit cells, that follows the word header
+//    Note this code can also be used to store data if an early unconditional early return is placed
+//   (this is how "regular" variables work, they contain two bytes to push the data address onto the stack,
+//    two "exit" bytes that can later be replaced by DOES> with a jump to special code, and the rest of the space is for
+//    data)
 
 // The dictionary pointer points to the start of the last-defined word,
 // The pad, function stack, and data stack pointers point to the
