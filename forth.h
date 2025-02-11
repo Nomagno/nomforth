@@ -7,13 +7,6 @@
 
 typedef uint32_t Cell;
 
-//8 bits
-typedef enum {
-    t_normal=0,
-    t_immediate=1
-} PrefType;
-//Jump: a static relative jump at beggining of the word, for supported word types
-
 //32 bits
 typedef enum {
  t_unknown_label=0,
@@ -86,6 +79,7 @@ typedef struct {
     forthFunc func;
     _Bool priority;
     _Bool forbid_tco;
+    _Bool custom_bit_tbd;
     char *name;
 } PrimitiveData;
 
@@ -113,7 +107,7 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 
 Cell addToPad(Ctx *c, Cell *m, char *s, unsigned name_size);
 void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size, _Bool p, _Bool forbid_tco,
-              Cell *data, unsigned data_size);
+              _Bool forbid_interpreting, Cell *data, unsigned data_size);
 Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size);
 Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size);
 

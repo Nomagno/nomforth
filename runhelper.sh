@@ -3,7 +3,11 @@
 tmpff1=$(mktemp);
 tmpff2=$(mktemp);
 tmpff3=$(mktemp);
-printf "..silent\n" > $tmpff1
+
+# Normally, we'd use the word ..silent, but in this case it's not defined yet until we include prims.fs, so we hard code its effect
+#printf "..silent\n" > $tmpff1
+printf '6 DUP @ 1 1 LSHIFT OR SWAP !\n' > $tmpff1
+
 printf "\n..verbose\n" > $tmpff2
 cat $@
 echo Prepending the files: $@

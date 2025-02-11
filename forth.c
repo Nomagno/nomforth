@@ -24,7 +24,7 @@ Cell addToPad(Ctx *c, Cell *m, char *s, unsigned name_size) {
 }
 
 void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size,
-              _Bool p, _Bool forbid_tco, Cell *data, unsigned data_size) {
+              _Bool p, _Bool forbid_tco, _Bool custom_bit_tbd, Cell *data, unsigned data_size) {
     Cell prev_loc = m[c->dict_pos_ptr];
     Cell prev_size = (prev_loc == 0) ? DICT_START : (3+(m[prev_loc+2] & 0x0000FFFF));
     m[c->dict_pos_ptr] = prev_loc + + prev_size;
@@ -32,7 +32,7 @@ void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size,
     Cell curr_loc = m[c->dict_pos_ptr];
     m[curr_loc] = prev_loc;
     m[curr_loc+1] = addToPad(c, m, name, name_size);
-    m[curr_loc+2] = (forbid_tco << 30) | (p << 28) | (data_size & 0x0000FFFF);
+    m[curr_loc+2] = (forbid_tco << 30) | (custom_bit_tbd << 29) | (p << 28) | (data_size & 0x0000FFFF);
     for (unsigned i = 0; i < data_size; i++)
         m[curr_loc+3+i] = data[i];
 }
@@ -217,7 +217,7 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             }
             break;
         default:
-            if ((m[m[contents]+2] & 0x40000000) || (m[contents+1] != t_end)) {
+            if ((m[m[contents]+2] >> 30 & 1) || (m[contents+1] != t_end)) {
                 funcPush(c, m, m[c->program_counter_ptr]);
             } else {
                 // If it's a tail call no need to push another stack frame,
@@ -263,20 +263,13 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
         if (w != 0) {
             /*Highest bit is for auxiliary info,
               second highest is for TCO permissions,
-              third highest is for interpreting permissions,
+              third highest is to be determined,
               fourth highest is for immediacy info
             */
             _Bool priority = m[w+2]>>28 & 1;
-            _Bool forbid_interpreting = m[w+2]>>29 & 1;
             if (priority || m[c->compile_state_ptr] == 0) {
-                if (forbid_interpreting && m[c->compile_state_ptr] == 0) {
-                    printf("{ERROR: word can not be executed in interpreting mode %.*s}\n", w_size, lorig);
-                    l_c = 0;
-                    was_there_error = 1;
-                } else {
-                    dataPush(c, m, w);
-                    PRIM(execute)(c, m);
-                }
+                dataPush(c, m, w);
+                PRIM(execute)(c, m);
             } else {
                 dataPush(c, m, w);
                 PRIM(comma)(c, m);
@@ -292,7 +285,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
                     dataPush(c, m, val);
                 else {
                     // Tag for literal
-                    dataPush(c, m, 3);
+                    dataPush(c, m, t_num);
                     PRIM(comma)(c, m);
 
                     // Actual value
@@ -351,7 +344,7 @@ void initPrimitives(Ctx *c, Cell *m) {
     {
         if (primTable[i].func == NULL) { }
         else {
-            makeWord(c, m, primTable[i].name, strlen(primTable[i].name), primTable[i].priority, primTable[i].forbid_tco, CA(t_primitive, i, t_end), 3);
+            makeWord(c, m, primTable[i].name, strlen(primTable[i].name), primTable[i].priority, primTable[i].forbid_tco, primTable[i].custom_bit_tbd, CA(t_primitive, i, t_end), 3);
         }
     }
 }
@@ -367,30 +360,26 @@ int main(void) {
     char *linep = &line[0];
     size_t lines = 1024;
 
-    _Bool silent = 0;
-
     printf("Welcome to nomForth!\n"
            "To exit, type \'quit\'.\n");
 
+    _Bool silent = 0;
+    _Bool quit = 0;
     while(1) {
+        silent = memory[myContext.flags_ptr] >> 1 & 1;
+        quit = memory[myContext.flags_ptr] >> 0 & 1;
+        if (quit) {
+            printf("\nThanks for using nomForth.\n");
+            break;
+        }
+
         int nread = getline(&linep, &lines, stdin);
         line[nread-1] = '\0';
         if (nread <= 1) {
             line[0] = '\0';
             continue;
         }
-        if (strcmp(line, "..silent") == 0) {
-            printf("Entering silent mode\n");
-            silent = 1;
-        } else if (strcmp(line, "..verbose") == 0) {
-            silent = 0;
-            printf("Exiting silent mode\n");
-        } else if (strcmp(line, "quit") == 0) {
-            printf("\nThanks for using nomForth.\n");
-            break;
-        } else {
-            if (!silent) printf("OUTPUT:");
-            interpret(&myContext, memory, line, silent);
-        }
+        if (!silent) printf("OUTPUT:");
+        interpret(&myContext, memory, line, silent);
     }
 }

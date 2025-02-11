@@ -25,7 +25,7 @@
     SWAP !
 ;
 
-: FORBID_INTERPRETING ( -- )
+: SET_BIT_TBD ( -- )
     DICT_CURRENT 2 +
     DUP @
     1 29 LSHIFT    
@@ -68,9 +68,28 @@
 
 : C_PROGRAM_COUNTER_ADDRESS_CONST 1 LIT, ; immediate
 : C_COMPILE_STATE_ADDRESS_CONST 2 LIT, ; immediate
+: C_FLAGS_POINTER_ADDRESS_CONST 6 LIT, ; immediate
 
 ( When altering this, make sure to also alter the definition of DICT_CURRENT)
 : C_DICT_POINTER_ADDRESS_CONST 31 LIT, ; immediate
+
+: QUIT
+    C_FLAGS_POINTER_ADDRESS_CONST
+    DUP @ 1 0 LSHIFT OR
+    SWAP !
+;
+
+: ..SILENT
+    C_FLAGS_POINTER_ADDRESS_CONST
+    DUP @ 1 1 LSHIFT OR
+    SWAP !
+;
+
+: ..VERBOSE
+    C_FLAGS_POINTER_ADDRESS_CONST
+    DUP @ 1 1 LSHIFT BITWISE_NOT AND
+    SWAP !
+;
 
 
 : EXIT C_T_END_CONST , ; immediate

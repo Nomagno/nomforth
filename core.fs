@@ -165,7 +165,7 @@
     ELSE
         STRLIT" : "
         DUP WHO COUNT TYPE CR
-        DUP RAW_VAR_SIZE 0 ?DO
+        DUP RAW_VAR_SIZE 3 - 0 ?DO
             2 SPACES
             STRLIT" ["
             I

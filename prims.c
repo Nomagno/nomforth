@@ -20,12 +20,12 @@ MAKEPRIM(colon) {
     if (w_size == 0) { printf("WARNING: word created with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
+    makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
 
     m[c->compile_state_ptr] = 1;
 }
 MAKEPRIM(colonAnonymous) {
-    makeWord(c, m, "\0", 0, 0, 0, NULL, 0);
+    makeWord(c, m, "\0", 0, 0, 0, 0, NULL, 0);
     m[c->compile_state_ptr] = 1;
     dataPush(c, m, m[c->dict_pos_ptr]);
 }
@@ -55,7 +55,7 @@ MAKEPRIM(emptyword) {
     if (w_size == 0) { printf("WARNING: 'EMPTY_WORD' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
+    makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
 }
 MAKEPRIM(create) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
@@ -63,7 +63,7 @@ MAKEPRIM(create) {
     if (w_size == 0) { printf("WARNING: 'CREATE' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    makeWord(c, m, lorig, w_size, 0, 0, NULL, 0);
+    makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
     m[m[c->dict_pos_ptr]+2] |= 1 << 31; /*Mark as variable by setting highest bit*/
     appendWord(c, m, CA(t_num, m[c->dict_pos_ptr]+7), 2); // +3, pointer to first empty cell
     appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
@@ -175,7 +175,7 @@ MAKEPRIM(defer) {
     if (w_size == 0) { printf("WARNING: 'DEFER' called with no name\n"); }
     char *lorig = c->inter_str-w_size;
 
-    makeWord(c, m, lorig, w_size, 0, 0, CA(t_end, t_end), 2);
+    makeWord(c, m, lorig, w_size, 0, 0, 0, CA(t_end, t_end), 2);
 }
 MAKEPRIM(postpone) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
@@ -219,10 +219,6 @@ MAKEPRIM(mod){
  Cell w2 = dataPop(c, m);
  dataPush(c, m, w2%w1);
 }
-MAKEPRIM(invert){
- Cell w1 = dataPop(c, m);
- dataPush(c, m, -w1);
-}
 MAKEPRIM(rshift){
  Cell w1 = dataPop(c, m);
  Cell w2 = dataPop(c, m);
@@ -243,7 +239,15 @@ MAKEPRIM(min){
  Cell w2 = dataPop(c, m);
  dataPush(c, m, (w1<w2) ? w1 : w2);
 }
-MAKEPRIM(negate){
+MAKEPRIM(arithmetical_not){
+ Cell w1 = dataPop(c, m);
+ dataPush(c, m, -w1);
+}
+MAKEPRIM(bitwise_not){
+ Cell w1 = dataPop(c, m);
+ dataPush(c, m, ~w1);
+}
+MAKEPRIM(logical_not){
  Cell w1 = dataPop(c, m);
  dataPush(c, m, w1 ? BOOL(0) : BOOL(1));
 }
