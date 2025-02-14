@@ -132,6 +132,7 @@
 : XT-SEE ( xt -- )
     DUP 0 = IF
         STRLIT" WORD NOT FOUND"
+        DROP
         EXIT
     THEN
 
@@ -241,6 +242,7 @@
             DROP
         LOOP
     THEN
+    2DROP
 ;
 
 : SEE ( "<name>" -- ) ' XT-SEE ;
