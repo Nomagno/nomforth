@@ -57,7 +57,6 @@ MAKEPRIM(leq);
 MAKEPRIM(gr);
 MAKEPRIM(geq);
 
-MAKEPRIM(count);
 MAKEPRIM(emit);
 MAKEPRIM(type);
 MAKEPRIM(cr);
@@ -152,7 +151,6 @@ MAKEPRIM(rtuck);
     {PRIM(gr), 0, 0, 0, ">"}, \
     {PRIM(geq), 0, 0, 0, ">="}, \
                             \
-    {PRIM(count), 0, 0, 0, "COUNT"}, \
     {PRIM(emit), 0, 0, 0, "EMIT"}, \
     {PRIM(type), 0, 0, 0, "TYPE"}, \
     {PRIM(cr), 0, 0, 0, "CR"}, \

@@ -302,11 +302,6 @@ MAKEPRIM(geq){
 }
 /*Printing strings, numbers, memory, etc.*/
 /*---------------------------------------------*/
-MAKEPRIM(count) {
-    Cell obtained_str = dataPop(c, m);
-    dataPush(c, m, obtained_str+1);
-    dataPush(c, m, m[obtained_str]-1);
-}
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c, m);
     if (ch >= 0x20 || ch <= 0x7E) {
