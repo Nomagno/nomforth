@@ -7,6 +7,16 @@
 : CELL+ 1 + ;
 : -ROT ROT ROT ;
 
+: BETWEEN ( x1 x2 x3 -- B)
+  ( if x1 is between x2 and x3, both included, leave -1 on the stack, else leave 0)
+  >R
+  2DUP >=
+  NIP
+  R> SWAP >R
+  <=
+  R> AND
+;
+
 ( Control flow words )
 : ?DO ( -- dest / D: l i -- , R: -- l i )
     POSTPONE BEGIN
@@ -24,18 +34,27 @@
 ; immediate
 : I r> r> DUP >r SWAP >r ; forbid_tco
 : +I r> SWAP r> + >r >r ; forbid_tco
+
 : CASE
     0 ( setup parameter with the amount of AHEAD references)
 ; IMMEDIATE
-: OF ( x1 x2 -- x1, if x1==x2 execute, else skip to right after the closing ENDOF)
-    PPW 2DUP
-    PPW =
-    PPW -ROT
-    PPW DROP
-    PPW SWAP
+: GOF ( GENERAL OF, SIMPLY CONSUMES A FLAG)
     POSTPONE IF
-    PPW DROP
     SWAP ( tuck OF reference behind reference count)
+; immediate
+: ROF ( x1 x2 x3 -- x1, if x2<=x1<=x3 execute, else skip to right after the closing ENDOF)
+    PPW ROT
+    PPW DUP
+    PPW 2SWAP
+    PPW BETWEEN
+    POSTPONE GOF
+    PPW DROP
+; immediate
+: OF ( x1 x2 -- x1, if x1==x2 execute, else skip to right after the closing ENDOF)
+    PPW OVER
+    PPW =
+    POSTPONE GOF
+    PPW DROP
 ; immediate
 : ENDOF
     POSTPONE AHEAD ( create AHEAD reference to skip default case)

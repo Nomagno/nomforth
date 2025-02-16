@@ -195,28 +195,28 @@ MAKEPRIM(execute) {
 /*Trivial mapping of C arithmetic operators*/
 /*---------------------------------------------*/
 MAKEPRIM(add){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, w2+w1);
 }
 MAKEPRIM(minus){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, w2-w1);
 }
 MAKEPRIM(mult){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, w2*w1);
 }
 MAKEPRIM(div){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, w2/w1);
 }
 MAKEPRIM(mod){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, w2%w1);
 }
 MAKEPRIM(rshift){
@@ -230,13 +230,13 @@ MAKEPRIM(lshift){
  dataPush(c, m, w2<<w1);
 }
 MAKEPRIM(max){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, (w1>w2) ? w1 : w2);
 }
 MAKEPRIM(min){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, (w1<w2) ? w1 : w2);
 }
 MAKEPRIM(arithmetical_not){
@@ -267,8 +267,8 @@ MAKEPRIM(xor){
  dataPush(c, m, w2^w1);
 }
 MAKEPRIM(abs){
- Cell w1 = dataPop(c, m);
- dataPush(c, m, ((int)w1 < 0) ? -w1 : w1);
+ int32_t w1 = dataPop(c, m);
+ dataPush(c, m, (w1 < 0) ? -w1 : w1);
 }
 MAKEPRIM(eq){
  Cell w1 = dataPop(c, m);
@@ -281,23 +281,23 @@ MAKEPRIM(neq){
  dataPush(c, m, BOOL(w2!=w1));
 }
 MAKEPRIM(le){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, BOOL(w2<w1));
 }
 MAKEPRIM(leq){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, BOOL(w2<=w1));
 }
 MAKEPRIM(gr){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, BOOL(w2>w1));
 }
 MAKEPRIM(geq){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
+ int32_t w1 = dataPop(c, m);
+ int32_t w2 = dataPop(c, m);
  dataPush(c, m, BOOL(w2>=w1));
 }
 /*Printing strings, numbers, memory, etc.*/
