@@ -166,6 +166,10 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
     while (!reached_end) {
         Cell contents = m[c->program_counter_ptr];
         switch(m[contents]){
+        case t_unknown_label:
+            printf("{ERROR: 0 IS NOT A VALID INSTRUCTION\n");
+            reached_end = 1;
+            break;
         case t_nop:
             m[c->program_counter_ptr] += 1;
             break;

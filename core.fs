@@ -93,7 +93,7 @@
 : CONSTANT ( n "name" --  )
     EMPTY_WORD
     LIT,
-    C_T_END_CONST ,
+    C_T_E ,
 ;
 : BEGIN-STRUCTURE ( -- addr 0 ; Exec -- size )
     CREATE

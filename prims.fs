@@ -4,7 +4,7 @@
 
 : DICT_CURRENT ( -- current_dictionary_word_start)
     ( We can not do this because we do not have the word defined yet:)
-    ( C_DICT_POINTER_ADDRESS_CONST @)
+    ( C_DICT_ADR @)
     ( So we hard-code it)
     31 @
 ;
@@ -53,47 +53,50 @@
 : LIT, 3 , , ;
 : LITERAL LIT, LITERAL ; immediate
 
-: C_T_UNKNOWN_CONST 0 LIT, ; immediate
-: C_T_NOP_CONST 1 LIT, ; immediate
-: C_T_PRIM_CONST 2 LIT, ; immediate
-: C_T_NUM_CONST 3 LIT, ; immediate
-: C_T_RELJUMP_CONST 4 LIT, ; immediate
-: C_T_RELJUMPBACK_CONST 5 LIT, ; immediate
-: C_T_CONDRELJUMP_CONST 6 LIT, ; immediate
-: C_T_CONDRELJUMPBACK_CONST 7 LIT, ; immediate
-: C_T_ABSJUMP_CONST 8 LIT, ; immediate
-: C_T_LEAVELABEL_CONST 9 LIT, ; immediate
-: C_T_END_CONST 10 LIT, ; immediate
-: C_T_END_NOTAILCALL_CONST 11 LIT, ; immediate
+: C_T_UNKNOWN 0 LIT, ; immediate
+: C_T_NOP 1 LIT, ; immediate
+: C_T_PRIM 2 LIT, ; immediate
+: C_T_NUM 3 LIT, ; immediate
+: C_T_RJMP 4 LIT, ; immediate
+: C_T_RBJMP 5 LIT, ; immediate
+: C_T_CRJMP 6 LIT, ; immediate
+: C_T_CRBJMP 7 LIT, ; immediate
+: C_T_ABSJMP 8 LIT, ; immediate
+: C_T_L 9 LIT, ; immediate
+: C_T_E 10 LIT, ; immediate
+: C_T_E_NTC 11 LIT, ; immediate
 
-: C_PROGRAM_COUNTER_ADDRESS_CONST 1 LIT, ; immediate
-: C_COMPILE_STATE_ADDRESS_CONST 2 LIT, ; immediate
-: C_FLAGS_POINTER_ADDRESS_CONST 6 LIT, ; immediate
+: C_PC_ADR 1 LIT, ; immediate
+: C_STATE_ADR 2 LIT, ; immediate
+: C_STRPOS_ADR 3 LIT, ; immediate
+: C_STRSIZE_ADR 4 LIT, ; immediate
+: C_STRPTR_ADR 5 LIT, ; immediate
+: C_FLAGS_ADR 6 LIT, ; immediate
 
 ( When altering this, make sure to also alter the definition of DICT_CURRENT)
-: C_DICT_POINTER_ADDRESS_CONST 31 LIT, ; immediate
+: C_DICT_ADR 31 LIT, ; immediate
 
 : QUIT
-    C_FLAGS_POINTER_ADDRESS_CONST
+    C_FLAGS_ADR
     DUP @ 1 0 LSHIFT OR
     SWAP !
 ;
 
 : ..SILENT
-    C_FLAGS_POINTER_ADDRESS_CONST
+    C_FLAGS_ADR
     DUP @ 1 1 LSHIFT OR
     SWAP !
 ;
 
 : ..VERBOSE
-    C_FLAGS_POINTER_ADDRESS_CONST
+    C_FLAGS_ADR
     DUP @ 1 1 LSHIFT BITWISE_NOT AND
     SWAP !
 ;
 
 
-: EXIT C_T_END_CONST , ; immediate
-: EXIT_NTC C_T_END_NOTAILCALL_CONST , ; immediate
+: EXIT C_T_E , ; immediate
+: EXIT_NTC C_T_E_NTC , ; immediate
 
 : RAW_VAR_SIZE ( xt -- size)
     2 + @ 65535 AND
@@ -108,13 +111,13 @@
 
 : IF ( Compile-time: -- orig, generates conditional branch, places forward ref on stack )
     HERE 1 +
-    C_T_CONDRELJUMP_CONST ,
+    C_T_CRJMP ,
     0 ,
 ; immediate
 
  : AHEAD ( Compile-time: -- orig, generates unconditional branch, places forward ref on stack )
     HERE 1 +
-    C_T_RELJUMP_CONST ,
+    C_T_RJMP ,
     0 ,
 ; immediate
 
@@ -129,7 +132,7 @@
 ; immediate
 
 : AGAIN ( Compile-time: dest -- , resolves back ref with unconditional branch )
-    C_T_RELJUMPBACK_CONST ,
+    C_T_RBJMP ,
     0 ,
     HERE 1 -
     DUP 1 -
@@ -138,7 +141,7 @@
 ; immediate
 
 : UNTIL ( Compile-time: dest -- , resolves back ref with conditional branch )
-    C_T_CONDRELJUMPBACK_CONST ,
+    C_T_CRBJMP ,
     0 ,
     HERE 1 -
     DUP 1 -
@@ -162,9 +165,9 @@
     THEN
 ;
 
-: STATE C_COMPILE_STATE_ADDRESS_CONST ;
-: [ C_COMPILE_STATE_ADDRESS_CONST 0 SWAP ! ; immediate
-: ] C_COMPILE_STATE_ADDRESS_CONST 1 SWAP ! ;
+: STATE C_STATE_ADR ;
+: [ C_STATE_ADR 0 SWAP ! ; immediate
+: ] C_STATE_ADR 1 SWAP ! ;
 
 : ' ( "name" -- xt ) BL WORD FIND 
     DUP 0 = IF ( if the word doesn't exist, return 0)

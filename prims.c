@@ -72,6 +72,10 @@ MAKEPRIM(comma) {
     Cell val = dataPop(c, m);
     appendWord(c, m, CA(val), 1);
 }
+MAKEPRIM(execute) {
+    Cell popped_xt = dataPop(c, m);
+    executeWord(c, m, popped_xt);
+}
 MAKEPRIM(worddoesprim) {
     Cell current_word = m[c->dict_pos_ptr];
     Cell pc = funcPeek(c, m); // DO NOT CALL WORDDOESPRIM EXCEPT THROUGH THE DICTIONARY INTERFACE! IT DOES CALLSTACK MANIPULATION!
@@ -187,12 +191,7 @@ MAKEPRIM(postpone) {
 
     appendWord(c, m, CA(found_word), 1);
 }
-MAKEPRIM(execute) {
-    Cell popped_xt = dataPop(c, m);
-    executeWord(c, m, popped_xt);
-}
 /* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
-/*Trivial mapping of C arithmetic operators*/
 /*---------------------------------------------*/
 MAKEPRIM(add){
  int32_t w1 = dataPop(c, m);

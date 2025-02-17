@@ -9,7 +9,7 @@ typedef uint32_t Cell;
 
 //32 bits
 typedef enum {
- t_unknown_label=0,
+    t_unknown_label=0,
     t_nop=1, //The second cell can be used to store info that will be ignored at runtime
     t_primitive=2, //execute
     t_num=3, //push payload on the stack

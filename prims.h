@@ -14,6 +14,7 @@ MAKEPRIM(backslash);
 MAKEPRIM(emptyword);
 MAKEPRIM(create);
 MAKEPRIM(comma);
+MAKEPRIM(execute);
 MAKEPRIM(worddoesprim);
 MAKEPRIM(worddoes);
 
@@ -31,7 +32,6 @@ MAKEPRIM(find);
 MAKEPRIM(is);
 MAKEPRIM(defer);
 MAKEPRIM(postpone);
-MAKEPRIM(execute);
 
 MAKEPRIM(add);
 MAKEPRIM(minus);
