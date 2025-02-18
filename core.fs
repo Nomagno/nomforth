@@ -6,6 +6,8 @@
 : CELL 1 ;
 : CELL+ 1 + ;
 : -ROT ROT ROT ;
+: NOOP ;
+: COMPILE, , ;
 
 : PICK ( x0 i*x u.i -- x0 i*x x0 )
   dup 0 = if drop dup exit then  swap >r 1 - recurse r> swap
