@@ -80,6 +80,7 @@
                 C_T_L      OF STRLIT" LEAVE LABEL, THIS IS PROBABLY AN ERROR/BUG" CR ENDOF
                 C_T_E             OF STRLIT" RETURN" CR ENDOF
                 C_T_E_NTC  OF STRLIT" RETURN (no tail recursion allowed)" CR ENDOF
+                C_T_EXEC  OF STRLIT" EXECUTE WORD FROM STACK" CR ENDOF
                 DUP STRLIT" WORD: " PRINTWORD CR
             ENDCASE
             DROP

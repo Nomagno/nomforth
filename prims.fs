@@ -65,6 +65,7 @@
 : C_T_L 9 LIT, ; immediate
 : C_T_E 10 LIT, ; immediate
 : C_T_E_NTC 11 LIT, ; immediate
+: C_T_EXEC 12 LIT, ; immediate
 
 : C_PC_ADR 1 LIT, ; immediate
 : C_STATE_ADR 2 LIT, ; immediate
@@ -72,6 +73,12 @@
 : C_STRSIZE_ADR 4 LIT, ; immediate
 : C_STRPTR_ADR 5 LIT, ; immediate
 : C_FLAGS_ADR 6 LIT, ; immediate
+: C_BASE_ADR 7 LIT, ; immediate
+: C_PAD_ADR 5119 LIT, ; immediate
+
+: DECIMAL 10 C_BASE_ADR ! ;
+: HEX 16 C_BASE_ADR ! ;
+: OCTAL 16 C_BASE_ADR ! ;
 
 ( When altering this, make sure to also alter the definition of DICT_CURRENT)
 : C_DICT_ADR 31 LIT, ; immediate
@@ -120,6 +127,19 @@
     C_T_RJMP ,
     0 ,
 ; immediate
+
+ : GOTO ( Compile-time: loc -- , generates unconditional absolute jump that reads FROM THE DATA STACK)
+    C_T_ABSJMP ,
+    ,
+; immediate
+
+: EXECUTE_PRIM ( Compile-time: -- , generates execute primitive, at run-time it'll execute an xt on the data stack)
+    C_T_EXEC ,
+; immediate
+
+: EXECUTE
+    EXECUTE_PRIM
+;
 
 : THEN ( Compile-time: orig --, resolves forward ref )
     DUP

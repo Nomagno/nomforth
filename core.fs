@@ -7,6 +7,14 @@
 : CELL+ 1 + ;
 : -ROT ROT ROT ;
 
+: PICK ( x0 i*x u.i -- x0 i*x x0 )
+  dup 0 = if drop dup exit then  swap >r 1 - recurse r> swap
+;
+
+: ROLL ( x0 i*x u.i -- i*x x0 )
+  dup 0 = if drop exit then  swap >r 1 - recurse r> swap
+;
+
 : BETWEEN ( x1 x2 x3 -- B)
   ( if x1 is between x2 and x3, both included, leave -1 on the stack, else leave 0)
   >R
@@ -109,12 +117,22 @@
 ;
 
 ( String/array handling words)
+
+: NEWSTR ( -- adr)
+  C_PAD_ADR DUP
+  @ DUP 0 SWAP !
+  1 + SWAP !
+;
+
+( adr -- , deletes all scratch pad entries starting from the selected address, by resetting the pad pointer)
+: RESET_PAD_TO C_PAD_ADR ! ;
+
 : "p [CHAR] " PARSE ;
-: ." "p TYPE ;
 : COUNT ( adr -- adr+1 strsize) DUP @ 1 -   SWAP 1 +   SWAP ;
 : UNCOUNT ( adr+1 strsize -- adr) DROP 1 - ;
+: ." "p DUP COUNT TYPE RESET_PAD_TO ;
 : STRLIT"
-    "p DROP 1 - LIT,
+    "p LIT,
     PPW COUNT
     PPW TYPE
 ; immediate

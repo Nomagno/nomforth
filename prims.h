@@ -14,7 +14,6 @@ MAKEPRIM(backslash);
 MAKEPRIM(emptyword);
 MAKEPRIM(create);
 MAKEPRIM(comma);
-MAKEPRIM(execute);
 MAKEPRIM(worddoesprim);
 MAKEPRIM(worddoes);
 
@@ -126,7 +125,6 @@ MAKEPRIM(rtuck);
     {PRIM(is), 0, 0, 0, "IS"}, \
     {PRIM(defer), 0, 0, 0, "DEFER"}, \
     {PRIM(postpone), 1, 0, 0, "POSTPONE"}, \
-    {PRIM(execute), 0, 0, 0, "EXECUTE"}, \
                             \
     {PRIM(add), 0, 0, 0, "+"}, \
     {PRIM(minus), 0, 0, 0, "-"}, \

@@ -72,10 +72,6 @@ MAKEPRIM(comma) {
     Cell val = dataPop(c, m);
     appendWord(c, m, CA(val), 1);
 }
-MAKEPRIM(execute) {
-    Cell popped_xt = dataPop(c, m);
-    executeWord(c, m, popped_xt);
-}
 MAKEPRIM(worddoesprim) {
     Cell current_word = m[c->dict_pos_ptr];
     Cell pc = funcPeek(c, m); // DO NOT CALL WORDDOESPRIM EXCEPT THROUGH THE DICTIONARY INTERFACE! IT DOES CALLSTACK MANIPULATION!
@@ -140,8 +136,7 @@ MAKEPRIM(parse) {
     c->inter_str += 1;
 
     Cell created_string = addToPad(c, m, lorig, w_size);
-    dataPush(c, m, created_string+1);
-    dataPush(c, m, m[created_string]-1);
+    dataPush(c, m, created_string);
 }
 MAKEPRIM(parse_name) {
     int w_size = advanceTo(&c->inter_str, ' ', 1);
@@ -150,8 +145,7 @@ MAKEPRIM(parse_name) {
     char *lorig = c->inter_str-w_size;
 
     Cell created_string = addToPad(c, m, lorig, w_size);
-    dataPush(c, m, created_string+1);
-    dataPush(c, m, m[created_string]);
+    dataPush(c, m, created_string);
 }
 MAKEPRIM(find) {
     Cell obtained_str = dataPop(c, m);
@@ -340,7 +334,10 @@ MAKEPRIM(xdot) {
     printf(" %08X", dataPop(c, m));
 }
 MAKEPRIM(dotmem) {
-    printMemory(m, 0, 0x1000, 0x10);
+    Cell start = dataPop(c, m);
+    Cell end = dataPop(c, m);
+    Cell step = dataPop(c, m);
+    printMemory(m, start, end, step);
 }
 MAKEPRIM(dotstack) {
     unsigned stacksize = m[c->dstack_ptr]-(c->dstack_start);

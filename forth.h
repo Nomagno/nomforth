@@ -27,7 +27,8 @@ typedef enum {
                     //pertaining to the loop, like a link to the previous leave
                     //for faster traversal by the loop that must replace it
     t_end=10, // Return from word
-    t_end_notailcall=11 // Return from word but ensuring this label causes no tail recursion
+    t_end_notailcall=11, // Return from word but ensuring this label causes no tail recursion
+    t_execute=12 // Execute word from the stack
 } CodeType;
 
 // Execution Token = Name Token = (Prev Name Header [Data])
@@ -68,6 +69,7 @@ typedef struct {
     char *inter_min;
     char *inter_str;
 
+    Cell base_ptr;
     Cell compile_state_ptr;
     Cell program_counter_ptr;
 } Ctx;
@@ -96,12 +98,12 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define STRSIZE 0x0004
 #define STRPTR 0x0005
 #define FLAGS 0x0006
+#define BASE  0x0007
 
 #define DICT_START 0x0020
-#define DSTACK_START 0x0A00
-#define FSTACK_START 0x0B00
-#define PAD_START    0x0C00
-#define HEAP_START   0x1000
+#define DSTACK_START 0x1000
+#define FSTACK_START 0x1200
+#define PAD_START    0x1400
 
 #define CA(...) (Cell[]){__VA_ARGS__}
 

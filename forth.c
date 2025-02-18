@@ -68,6 +68,11 @@ Cell dataPop(Ctx *c, Cell *m) {
 }
 
 Cell dataPeek(Ctx *c, Cell *m) {
+    if (m[c->dstack_ptr] == c->dstack_start) {
+        printf("{Data stack underflow. ABORTING}\n");
+        exit(1);
+    }
+
     return m[m[c->dstack_ptr]-1];    
 }
 
@@ -89,6 +94,11 @@ Cell funcPop(Ctx *c, Cell *m) {
 }
 
 Cell funcPeek(Ctx *c, Cell *m) {
+    if (m[c->fstack_ptr] == c->fstack_start) {
+        printf("{Function stack underflow. ABORTING}\n");
+        exit(1);
+    }
+
     return m[m[c->fstack_ptr]-1];    
 }
 
@@ -167,7 +177,7 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
         Cell contents = m[c->program_counter_ptr];
         switch(m[contents]){
         case t_unknown_label:
-            printf("{ERROR: 0 IS NOT A VALID INSTRUCTION\n");
+            printf("{ERROR: 0 IS NOT A VALID INSTRUCTION}\n");
             reached_end = 1;
             break;
         case t_nop:
@@ -203,7 +213,7 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             m[c->program_counter_ptr] = m[contents+1];
             break;
         case t_leavelabel:
-            printf("{ERROR: Non-replaced leave labelled, this shouldn't have happened}\n");
+            printf("{ERROR: Non-replaced leave label, this shouldn't have happened}\n");
             reached_end = 1;
             break;         
         case t_end_notailcall:
@@ -213,13 +223,19 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             if (m[c->fstack_ptr] - c->fstack_start == 0) {
                 //If the stack size is 0,
                 //we're going back to the interpreter
+                // Set Prog. Counter to NULL
+                m[c->program_counter_ptr] = 0;
                 reached_end = 1;
             } else {
                 // By convention the program counter needs to be incremented from the callee
                 m[c->program_counter_ptr] = funcPop(c, m);
                 m[c->program_counter_ptr] += 1;
+                //printf("\nSwitching executing to %u\n", m[c->program_counter_ptr]);
             }
             break;
+        case t_execute:
+            Cell new_w = 0;
+            new_w = dataPop(c, m);
         default:
             if ((m[m[contents]+2] >> 30 & 1) || (m[contents+1] != t_end)) {
                 funcPush(c, m, m[c->program_counter_ptr]);
@@ -228,7 +244,7 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
                 // Unless the word is forbidden from being Tail Call Optimized
                 //printf("Doing tail recursion: %X\n", m[m[contents]+2]);
             }
-            Cell new_w = m[contents]; 
+            if (m[contents] != t_execute) new_w = m[contents]; 
             contents = new_w+3;
             m[c->program_counter_ptr] = contents;
             break;
@@ -272,8 +288,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
             */
             _Bool priority = m[w+2]>>28 & 1;
             if (priority || m[c->compile_state_ptr] == 0) {
-                dataPush(c, m, w);
-                PRIM(execute)(c, m);
+                executeWord(c, m, w);
             } else {
                 dataPush(c, m, w);
                 PRIM(comma)(c, m);
@@ -281,7 +296,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
         } else {
             *c->inter_str = '\0';
             char *endptr;
-            Cell val = strtol(lorig, &endptr, 10);
+            Cell val = strtol(lorig, &endptr, m[c->base_ptr]);
             if (l_c != 0) *c->inter_str = ' ';
 
             if (endptr-lorig == w_size) {
@@ -307,6 +322,7 @@ void interpret(Ctx *c, Cell *m, char *l, _Bool silent) {
 }
 
 void init(Ctx *c, Cell *m) {
+    c->base_ptr = 7;
     c->compile_state_ptr = CS;
     c->program_counter_ptr = PC;
     c->dstack_start = DSTACK_START;
@@ -317,6 +333,7 @@ void init(Ctx *c, Cell *m) {
     c->dict_pos_ptr = DICT_START-1;
     c->pad_pos_ptr = PAD_START-1;
 
+    m[c->base_ptr] = 10;
     m[c->compile_state_ptr] = 0;
     m[c->program_counter_ptr] = 0;
     m[c->dstack_ptr] = DSTACK_START;
