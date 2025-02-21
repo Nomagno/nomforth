@@ -82,6 +82,7 @@
 
 ( When altering this, make sure to also alter the definition of DICT_CURRENT)
 : C_DICT_ADR 31 LIT, ; immediate
+: DP C_DICT_ADR ;
 
 : QUIT
     C_FLAGS_ADR
@@ -109,6 +110,7 @@
     2 + @ 65535 AND
     3 +
 ;
+
 
 : HERE ( -- next_empty_dictionary_byte)
     DICT_CURRENT

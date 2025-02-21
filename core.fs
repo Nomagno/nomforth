@@ -177,6 +177,11 @@
     THEN
 ;
 
+: MARKER
+    DP @ CREATE ,
+    DOES> @ DP !
+;
+
 ( [n stack items] n -- environment )
 ( like variable capture for closures )
 ( use 0 CAP to capture nothing. )
