@@ -29,6 +29,13 @@
 
 ( Control flow words )
 : ?DO ( -- dest / D: l i -- , R: -- l i )
+    PPW 2DUP
+    PPW >
+    POSTPONE IF
+    POSTPONE BEGIN
+    PPW 2>R
+; immediate
+: DO ( -- dest / D: l i -- , R: -- l i )
     POSTPONE BEGIN
     PPW 2>R
 ; immediate
@@ -39,6 +46,7 @@
     PPW 2DUP
     PPW <=
     POSTPONE UNTIL
+    POSTPONE THEN
     PPW 2DROP ( WE DROP FROM THE RETURN STACK BECAUSE IF WE )
               ( DID NOT LOOP, THE 2>R WAS NOT EXECUTED YET )
 ; immediate
@@ -168,3 +176,57 @@
         EXIT
     THEN
 ;
+
+( [n stack items] n -- environment )
+( like variable capture for closures )
+( use 0 CAP to capture nothing. )
+( DO NOT CAPTURE INSIDE A WORD DEFINITION )
+( don't use : word [ 1 cap ] ;, note it's using cap
+  as an immediate, not inside a closure [ vs [: )
+: CAP HERE SWAP  DUP ,   0 ?DO SWAP , LOOP ;
+
+: PRINTARR
+    DUP @ .
+    [CHAR] L EMIT
+    DUP @ DUP SWAP 0 ?DO
+      2DUP i - + @ .
+    LOOP
+    2DROP
+;
+
+( pushes environment onto stack )
+: PUSHARR
+    DUP @ DUP SWAP 0 ?DO
+      2DUP i - + @ -ROT
+    LOOP
+    2DROP
+;
+
+( DO NOT USE [: :] IN INTERPRET MODE)
+( start anonymous function )
+: [:
+  1 STATE !
+  HERE 4 + LIT,
+  POSTPONE AHEAD
+  0 ( dummy )
+  0 ,  0 ,  0 ,
+; immediate
+
+( end anonymous function )
+: :]
+  DROP ( drop dummy )
+  POSTPONE THEN
+; immediate
+
+( environment xt -- effect of xt with environment )
+: func-exec
+    >R
+    pusharr
+    R>
+    execute
+;
+
+( example use: )
+( : succ 1 cap [: 1 + :] ; )
+( 4 succ func-exec )
+( OUTPUT: 5 ok)
