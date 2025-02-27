@@ -31,6 +31,8 @@ MAKEPRIM(find);
 MAKEPRIM(is);
 MAKEPRIM(defer);
 MAKEPRIM(postpone);
+MAKEPRIM(getchar);
+
 
 MAKEPRIM(add);
 MAKEPRIM(minus);
@@ -125,6 +127,7 @@ MAKEPRIM(rtuck);
     {PRIM(is), 0, 0, 0, "IS"}, \
     {PRIM(defer), 0, 0, 0, "DEFER"}, \
     {PRIM(postpone), 1, 0, 0, "POSTPONE"}, \
+    {PRIM(getchar), 0, 0, 0, "GETC"}, \
                             \
     {PRIM(add), 0, 0, 0, "+"}, \
     {PRIM(minus), 0, 0, 0, "-"}, \

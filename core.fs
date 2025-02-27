@@ -235,3 +235,6 @@
 ( : succ 1 cap [: 1 + :] ; )
 ( 4 succ func-exec )
 ( OUTPUT: 5 ok)
+
+( -- n, where n is 0 is an invalid character was enteres, and a code 1-26 if a lowercase alphabet letter was entered)
+: GETLETTER GETC DUP DUP [CHAR] a >= SWAP [CHAR] z <= AND IF [char] a - 1 + ELSE DROP 0 THEN ;

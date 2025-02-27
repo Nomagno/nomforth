@@ -185,6 +185,15 @@ MAKEPRIM(postpone) {
 
     appendWord(c, m, CA(found_word), 1);
 }
+
+MAKEPRIM(getchar){
+	uint8_t w1 = getchar();
+	if (w1 == '\n') w1 = 0;
+	dataPush(c, m, w1);
+	if (w1 == '\n') return;
+	else while (getchar() != '\n');
+}
+
 /* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
 /*---------------------------------------------*/
 MAKEPRIM(add){
