@@ -177,6 +177,9 @@
     THEN
 ;
 
+: ARRAY ( size "name" --  ) CREATE ALLOT ;
+
+
 : MARKER
     DP @ CREATE ,
     DOES> @ DP !

@@ -48,7 +48,7 @@ BEGIN-STRUCTURE Vec3 \ A vec3 of *double*-sized integers
     2 FIELD: V.z
 END-STRUCTURE
 
-Vec3 VARIABLE MyVec
+Vec3 ARRAY MyVec
 
 \ We set the first byte of each field of this 3D vector
 9 MyVec V.x !
