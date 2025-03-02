@@ -239,5 +239,56 @@
 ( 4 succ func-exec )
 ( OUTPUT: 5 ok)
 
+( Local registers code)
+( BEWARE! SINCE YOU CAN NOT USE ; NOR EXIT)
+( IN A local-mode WORD, INSTEAD USING)
+( LEXIT AND ;;, YOU CAN NOT TAKE ADVANTAGE)
+( OF TAIL-CALL OPTIMIZATION.)
+( PLEASE DECLARE NORMAL WORDS AND LIMIT)
+( THE local-mode TO WORD FACTORS)
+( IF YOU NEED TCO)
+30 ARRAY lspA
+VARIABLE lsp
+( "locals stack pointer")
+lspA lsp !
+
+: LOCALS_FRAME_SIZE 3 ;
+
+( If you look at this code, the first LOCALS_FRAME_SIZE)
+( bytes of the locals stack are actually)
+( never used. I guess they can be used)
+( to store some metadata if you want)
+lspA CONSTANT lsp_start
+
+: lsp-> ( -- )  lsp @ LOCALS_FRAME_SIZE + lsp ! ;
+: <-lsp ( -- )  lsp @ LOCALS_FRAME_SIZE - lsp ! ;
+
+: >a ( n -- ) lsp @ ! ;
+: >b ( n -- ) lsp @ 1 + ! ;
+: >c ( n -- ) lsp @ 2 + ! ;
+
+: a> ( -- n ) lsp @  @ ;
+: b> ( -- n ) lsp @  1 + @ ;
+: c> ( -- n ) lsp @  2 + @ ;
+
+( -- , starts local-mode word)
+: ::
+    :  PPW lsp->
+;
+
+( -- , ends local-mode word)
+: ;;
+    PPW <-lsp
+    POSTPONE ;
+; immediate
+
+( -- , exit for local-mode words )
+( running exit compiles an exit label into the current word)
+: LEXIT  PPW <-lsp  POSTPONE EXIT ; immediate
+
+( example usage that prints 2 1:)
+( :: te 1 >c 2 . c> . LEXIT ;; )
+
+
 ( -- n, where n is 0 is an invalid character was enteres, and a code 1-26 if a lowercase alphabet letter was entered)
 : GETLETTER GETC DUP DUP [CHAR] a >= SWAP [CHAR] z <= AND IF [char] a - 1 + ELSE DROP 0 THEN ;
