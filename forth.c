@@ -332,6 +332,7 @@ void init(Ctx *c, Cell *m) {
     c->flags_ptr = FLAGS;
     c->dict_pos_ptr = DICT_START-1;
     c->pad_pos_ptr = PAD_START-1;
+    c->heap_start = HEAP_START;
 
     m[c->base_ptr] = 10;
     m[c->compile_state_ptr] = 0;

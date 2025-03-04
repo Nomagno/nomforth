@@ -84,6 +84,10 @@
 : C_DICT_ADR 31 LIT, ; immediate
 : DP C_DICT_ADR ;
 
+HEX
+: USERMEM 6000 ;
+DECIMAL
+
 : QUIT
     C_FLAGS_ADR
     DUP @ 1 0 LSHIFT OR
@@ -205,3 +209,6 @@
     ' LIT,
     ['] , ,
 ; immediate
+
+( Make sure to initialize the heap)
+HEAP_INIT

@@ -194,6 +194,30 @@ MAKEPRIM(getchar){
 	else while (getchar() != '\n');
 }
 
+/*Interface to Offset-based allocator in oa.h*/
+/*---------------------------------------------*/
+MAKEPRIM(heap_init){
+    OA_init(m+c->heap_start, 0x2000);
+}
+MAKEPRIM(defrag){
+    OA_defrag();
+}
+
+MAKEPRIM(allocate){
+    Cell s = dataPop(c, m);
+    if (s == 0) return;
+    Cell mem = OA_malloc(s);
+    mem = (mem == NIL) ? 0 : (mem + c->heap_start);
+    dataPush(c, m, mem);
+}
+
+MAKEPRIM(free){
+    Cell mem = dataPop(c, m);
+    mem = (mem == 0) ? NIL : (mem - c->heap_start);
+    OA_free(mem);
+}
+
+
 /* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
 /*---------------------------------------------*/
 MAKEPRIM(add){

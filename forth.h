@@ -64,6 +64,7 @@ typedef struct {
     Cell flags_ptr;
     Cell pad_pos_ptr;
     Cell dict_pos_ptr;
+    Cell heap_start;
 
     char *inter_max;
     char *inter_min;
@@ -101,9 +102,11 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define BASE  0x0007
 
 #define DICT_START 0x0020
-#define DSTACK_START 0x1000
-#define FSTACK_START 0x1200
-#define PAD_START    0x1400
+#define DSTACK_START 0x2000
+#define FSTACK_START 0x4000
+#define USERMEM_START 0x6000
+#define HEAP_START    0x8000
+#define PAD_START     0xA000
 
 #define CA(...) (Cell[]){__VA_ARGS__}
 

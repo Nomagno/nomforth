@@ -4,6 +4,7 @@
 #ifndef _PRIMS_H
 #define _PRIMS_H
 #include "forth.h"
+#include "oa.h"
 
 MAKEPRIM(colon);
 MAKEPRIM(colonAnonymous);
@@ -33,6 +34,10 @@ MAKEPRIM(defer);
 MAKEPRIM(postpone);
 MAKEPRIM(getchar);
 
+MAKEPRIM(heap_init);
+MAKEPRIM(defrag);
+MAKEPRIM(allocate);
+MAKEPRIM(free);
 
 MAKEPRIM(add);
 MAKEPRIM(minus);
@@ -128,6 +133,12 @@ MAKEPRIM(rtuck);
     {PRIM(defer), 0, 0, 0, "DEFER"}, \
     {PRIM(postpone), 1, 0, 0, "POSTPONE"}, \
     {PRIM(getchar), 0, 0, 0, "GETC"}, \
+    {PRIM(defer), 0, 0, 0, "DEFER"}, \
+                            \
+    {PRIM(heap_init), 0, 0, 0, "HEAP_INIT"}, \
+    {PRIM(defrag), 0, 0, 0, "DEFRAG"}, \
+    {PRIM(allocate), 0, 0, 0, "ALLOCATE"}, \
+    {PRIM(free), 0, 0, 0, "free"}, \
                             \
     {PRIM(add), 0, 0, 0, "+"}, \
     {PRIM(minus), 0, 0, 0, "-"}, \
