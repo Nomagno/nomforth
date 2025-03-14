@@ -197,6 +197,8 @@ MAKEPRIM(getchar){
 MAKEPRIM(getnum){
     Cell w1;
     _Bool found = scanf("%d", &w1);
+    while (getchar() != '\n');
+
     if (found) dataPush(c, m, w1);
     else       dataPush(c, m, -1);
 }
