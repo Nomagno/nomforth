@@ -42,7 +42,7 @@
 
         1 TABS
         DUP DASM_GET_VJUMP CASE
-            C_T_E     OF STRLIT" No special execution behaviour has been defined" CR ENDOF
+            C_T_E      OF STRLIT" No special execution behaviour has been defined" CR ENDOF
             C_T_ABSJMP OF STRLIT" Code at address 0x" DUP DASM_GET_VCODE X. CR ENDOF
             STRLIT" This variable is not following the standard variable format, weird" CR
         ENDCASE
@@ -68,19 +68,19 @@
 
             DUP I 3 + + ( get ivar and add it to current XT )
             DUP @ CASE
-                C_T_UNKNOWN         OF STRLIT" UNKNOWN" CR ENDOF
-                C_T_NOP             OF STRLIT" NO-OP" CR ENDOF
-                C_T_PRIM            OF 1 +i STRLIT" PRIMITIVE:" DUP PRINTNEXT CR ENDOF
-                C_T_NUM             OF 1 +i STRLIT" NUMBER:" DUP PRINTNEXT CR ENDOF
-                C_T_RJMP         OF 1 +i STRLIT" JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_RBJMP     OF 1 +i STRLIT" JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_CRJMP     OF 1 +i STRLIT" COND JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_CRBJMP OF 1 +i STRLIT" COND JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_ABSJMP         OF 1 +i STRLIT" ABSOLUTE JUMP TO:" DUP PRINTNEXT CR ENDOF
-                C_T_L      OF STRLIT" LEAVE LABEL, THIS IS PROBABLY AN ERROR/BUG" CR ENDOF
-                C_T_E             OF STRLIT" RETURN" CR ENDOF
-                C_T_E_NTC  OF STRLIT" RETURN (no tail recursion allowed)" CR ENDOF
-                C_T_EXEC  OF STRLIT" EXECUTE WORD FROM STACK" CR ENDOF
+                C_T_UNKNOWN OF STRLIT" UNKNOWN" CR ENDOF
+                C_T_NOP     OF STRLIT" NO-OP" CR ENDOF
+                C_T_PRIM    OF 1 +i STRLIT" PRIMITIVE:" DUP PRINTNEXT CR ENDOF
+                C_T_NUM     OF 1 +i STRLIT" NUMBER:" DUP PRINTNEXT CR ENDOF
+                C_T_RJMP    OF 1 +i STRLIT" JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_RBJMP   OF 1 +i STRLIT" JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_CRJMP   OF 1 +i STRLIT" COND JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_CRBJMP  OF 1 +i STRLIT" COND JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_ABSJMP  OF 1 +i STRLIT" ABSOLUTE JUMP TO:" DUP PRINTNEXT CR ENDOF
+                C_T_L       OF STRLIT" LEAVE LABEL, THIS IS PROBABLY AN ERROR/BUG" CR ENDOF
+                C_T_E       OF STRLIT" RETURN" CR ENDOF
+                C_T_E_NTC   OF STRLIT" RETURN (no tail recursion allowed)" CR ENDOF
+                C_T_EXEC    OF STRLIT" EXECUTE WORD FROM STACK" CR ENDOF
                 DUP STRLIT" WORD: " PRINTWORD CR
             ENDCASE
             DROP
