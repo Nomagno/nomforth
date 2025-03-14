@@ -187,11 +187,18 @@ MAKEPRIM(postpone) {
 }
 
 MAKEPRIM(getchar){
-	uint8_t w1 = getchar();
-	if (w1 == '\n') w1 = 0;
-	dataPush(c, m, w1);
-	if (w1 == '\n') return;
-	else while (getchar() != '\n');
+    uint8_t w1 = getchar();
+    if (w1 == '\n') w1 = 0;
+    dataPush(c, m, w1);
+    if (w1 == '\n') return;
+    else while (getchar() != '\n');
+}
+
+MAKEPRIM(getnum){
+    Cell w1;
+    _Bool found = scanf("%d", &w1);
+    if (found) dataPush(c, m, w1);
+    else       dataPush(c, m, -1);
 }
 
 /*Interface to Offset-based allocator in oa.h*/

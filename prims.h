@@ -33,6 +33,7 @@ MAKEPRIM(is);
 MAKEPRIM(defer);
 MAKEPRIM(postpone);
 MAKEPRIM(getchar);
+MAKEPRIM(getnum);
 
 MAKEPRIM(heap_init);
 MAKEPRIM(defrag);
@@ -133,6 +134,7 @@ MAKEPRIM(rtuck);
     {PRIM(defer), 0, 0, 0, "DEFER"}, \
     {PRIM(postpone), 1, 0, 0, "POSTPONE"}, \
     {PRIM(getchar), 0, 0, 0, "GETC"}, \
+    {PRIM(getnum), 0, 0, 0, "GETN"}, \
     {PRIM(defer), 0, 0, 0, "DEFER"}, \
                             \
     {PRIM(heap_init), 0, 0, 0, "HEAP_INIT"}, \
