@@ -13,7 +13,7 @@
 : TABS 2 * SPACES ;
 : GEO_RECIP ( n m -- x )
     2DUP < IF SWAP - ELSE 2DROP 0 THEN
-    ( x is either 0 if there is no space, or m-n if there is space.
+    ( x is either 0 if there is no space, or m-n if there is space. )
     ( m is the "maximum", and n is the "space taken up from that maximum".)
     ( Useful for computing the amount of negative space in 1 dimension, )
     ( like when you want to add padding to make a piece of text fixed-width )

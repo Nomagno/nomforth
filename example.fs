@@ -32,7 +32,7 @@ CR
 \ Maximum representable factorial in signed 32 bits: 12! == 479001600.
 
 \ To test out that it's really doing tail recursion, a number higher than at least 290 crashes the interpreter with
-\ factR, but works "just fine" (terminates with the expected behaviour when repeated overflow is considered,
+\ factR, but works "just fine" (terminates with the expected behaviour when repeated overflow is considered, )
 \ AKA returns 0) with factTR.
 
 ." Factorial of 12 (recursive and tail-recursive): "

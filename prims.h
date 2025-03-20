@@ -34,6 +34,7 @@ MAKEPRIM(defer);
 MAKEPRIM(postpone);
 MAKEPRIM(getchar);
 MAKEPRIM(getnum);
+MAKEPRIM(evaluate);
 
 MAKEPRIM(heap_init);
 MAKEPRIM(defrag);
@@ -125,7 +126,7 @@ MAKEPRIM(rtuck);
     {PRIM(rsend), 0, 1, 0, "R>"}, \
                             \
     {PRIM(bracket_char_bracket), 1, 0, 0, "[CHAR]"}, \
-    {PRIM(char), 1, 0, 0, "CHAR"}, \
+    {PRIM(char), 0, 0, 0, "CHAR"}, \
     {PRIM(word), 0, 0, 0, "WORD"}, \
     {PRIM(parse), 0, 0, 0, "PARSE"}, \
     {PRIM(parse_name), 0, 0, 0, "PARSE-NAME"}, \
@@ -135,6 +136,7 @@ MAKEPRIM(rtuck);
     {PRIM(postpone), 1, 0, 0, "POSTPONE"}, \
     {PRIM(getchar), 0, 0, 0, "GETC"}, \
     {PRIM(getnum), 0, 0, 0, "GETN"}, \
+    {PRIM(evaluate), 0, 0, 0, "EVALUATE"}, \
     {PRIM(defer), 0, 0, 0, "DEFER"}, \
                             \
     {PRIM(heap_init), 0, 0, 0, "HEAP_INIT"}, \
@@ -175,8 +177,8 @@ MAKEPRIM(rtuck);
     {PRIM(dotmem), 0, 0, 0, "M."}, \
     {PRIM(dotstack), 0, 0, 0, ".S"}, \
     {PRIM(udotstack), 0, 0, 0, "U.S"}, \
-    {PRIM(dotstackreturn), 0, 0, 0, "R.S"}, \
-    {PRIM(udotstackreturn), 0, 0, 0, "UR.S"}, \
+    {PRIM(dotstackreturn), 0, 1, 0, "R.S"}, \
+    {PRIM(udotstackreturn), 0, 1, 0, "UR.S"}, \
                             \
     {PRIM(drop), 0, 0, 0, "DROP"}, \
     {PRIM(nip), 0, 0, 0, "NIP"}, \

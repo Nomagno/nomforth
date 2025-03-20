@@ -66,9 +66,9 @@ typedef struct {
     Cell dict_pos_ptr;
     Cell heap_start;
 
-    char *inter_max;
-    char *inter_min;
-    char *inter_str;
+    Cell *inter_max;
+    Cell *inter_min;
+    Cell *inter_str;
 
     Cell base_ptr;
     Cell compile_state_ptr;
@@ -101,17 +101,18 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define FLAGS 0x0006
 #define BASE  0x0007
 
-#define DICT_START 0x0020
-#define DSTACK_START 0x2000
-#define FSTACK_START 0x4000
+#define DICT_START    0x0020
+#define DSTACK_START  0x2000
+#define FSTACK_START  0x4000
 #define USERMEM_START 0x6000
 #define HEAP_START    0x8000
 #define PAD_START     0xA000
+#define INBUF_START   0xF000
 
 #define CA(...) (Cell[]){__VA_ARGS__}
 
-Cell addToPad(Ctx *c, Cell *m, char *s, unsigned name_size);
-void makeWord(Ctx *c, Cell *m, char *name, unsigned name_size, _Bool p, _Bool forbid_tco,
+Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size);
+void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size, _Bool p, _Bool forbid_tco,
               _Bool forbid_interpreting, Cell *data, unsigned data_size);
 Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size);
 Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size);
@@ -120,7 +121,7 @@ void executePrimitive(Ctx *c, Cell *m, Cell id);
 void executeForeign(Ctx *c, Cell *m, Cell id);
 void executeComposite(Ctx *c, Cell *m, Cell w);
 void executeWord(Ctx *c, Cell *m, Cell w);
-void interpret(Ctx *c, Cell *m, char *l, _Bool silent);
+void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent);
 
 void dataPush(Ctx *c, Cell *m, Cell v);
 Cell dataPop(Ctx *c, Cell *m);
@@ -132,7 +133,7 @@ Cell funcPeek(Ctx *c, Cell *m);
 void init(Ctx *c, Cell *m);
 void initPrimitives(Ctx *c, Cell *m);
 void printMemory(Cell *m, unsigned start, unsigned maxval, unsigned increment);
-int advanceTo(char **s, char target, _Bool skip_leading);
+int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading);
 
 #define MAKEPRIM(x) void prim_##x(Ctx *c, Cell *m)
 #define PRIM(x) prim_##x
