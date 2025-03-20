@@ -189,7 +189,7 @@
 ( like variable capture for closures )
 ( use 0 CAP to capture nothing. )
 ( DO NOT CAPTURE INSIDE A WORD DEFINITION )
-( don't use : word [ 1 cap ] ;, note it's using cap
+( don't use : word [ 1 cap ] ;, note it's using cap)
 ( as an immediate, not inside a closure [ vs [: )
 : CAP HERE SWAP  DUP ,   0 ?DO SWAP , LOOP ;
 
