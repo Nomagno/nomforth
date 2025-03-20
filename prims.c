@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "prims.h"
 
 #define D_SAVE() Cell saved_d = dataPop(c, m)
@@ -47,6 +48,13 @@ MAKEPRIM(backslash) {
     if (w_size == 0) { }
     else { c->inter_str++; }
 }
+/* Quit the interpreter immediatel*/
+/*---------------------------------------------*/
+MAKEPRIM(bye) {
+    printf("\nThanks for using nomForth.\n");
+    exit(0);
+}
+
 /* Manipulate words*/
 /*---------------------------------------------*/
 MAKEPRIM(emptyword) {

@@ -83,4 +83,4 @@ see test
 ." Disassembly of /STRING: "
 see /string
 
-quit
+bye
