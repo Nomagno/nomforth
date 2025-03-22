@@ -263,11 +263,11 @@ lspA CONSTANT lsp_start
 : lsp-> ( -- )  lsp @ LOCALS_FRAME_SIZE + lsp ! ;
 : <-lsp ( -- )  lsp @ LOCALS_FRAME_SIZE - lsp ! ;
 
-: >a ( n -- ) lsp @ ! ;
+: >a ( n -- ) lsp @ 0 + ! ;
 : >b ( n -- ) lsp @ 1 + ! ;
 : >c ( n -- ) lsp @ 2 + ! ;
 
-: a> ( -- n ) lsp @  @ ;
+: a> ( -- n ) lsp @  0 + @ ;
 : b> ( -- n ) lsp @  1 + @ ;
 : c> ( -- n ) lsp @  2 + @ ;
 
@@ -290,5 +290,6 @@ lspA CONSTANT lsp_start
 ( :: te 1 >c 2 . c> . LEXIT ;; )
 
 
-( -- n, where n is 0 is an invalid character was enteres, and a code 1-26 if a lowercase alphabet letter was entered)
+( -- n, where n is 0 if an invalid character was entered, and a code 1-26 if a lowercase alphabet letter was entered)
 : GETLETTER GETC DUP DUP [CHAR] a >= SWAP [CHAR] z <= AND IF [char] a - 1 + ELSE DROP 0 THEN ;
+: GETNUMBER GETN ;

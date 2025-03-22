@@ -25,7 +25,7 @@ MAKEPRIM(colon) {
 
     m[c->compile_state_ptr] = 1;
 }
-MAKEPRIM(colonAnonymous) {
+MAKEPRIM(colonAnon) {
     makeWord(c, m, (Cell[]){0}, 0, 0, 0, 0, NULL, 0);
     m[c->compile_state_ptr] = 1;
     dataPush(c, m, m[c->dict_pos_ptr]);
@@ -113,7 +113,7 @@ MAKEPRIM(rsend) {
 }
 /* Reading data from the input stream*/
 /*---------------------------------------------*/
-MAKEPRIM(bracket_char_bracket) {
+MAKEPRIM(b_char_b) {
     int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
     if (w_size < 0) { w_size = -w_size; }
     if (w_size == 0) { printf("WARNING: '[CHAR]' called with no name\n"); }
@@ -303,7 +303,7 @@ MAKEPRIM(min){
  int32_t w2 = dataPop(c, m);
  dataPush(c, m, (w1<w2) ? w1 : w2);
 }
-MAKEPRIM(arithmetical_not){
+MAKEPRIM(arith_not){
  Cell w1 = dataPop(c, m);
  dataPush(c, m, -w1);
 }
@@ -426,7 +426,7 @@ MAKEPRIM(udotstack) {
     }
     printf(" |");
 }
-MAKEPRIM(dotstackreturn) {
+MAKEPRIM(dotstackret) {
     R_SAVE();
     unsigned stacksize = m[c->fstack_ptr]-(c->fstack_start);
     printf(" R| s <%d>:", stacksize);
@@ -436,7 +436,7 @@ MAKEPRIM(dotstackreturn) {
     printf(" |");
     R_RESTORE();
 }
-MAKEPRIM(udotstackreturn) {
+MAKEPRIM(udotstackret) {
     unsigned stacksize = m[c->fstack_ptr]-(c->fstack_start);
     printf(" R| s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {

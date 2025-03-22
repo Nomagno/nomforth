@@ -9,37 +9,20 @@
     31 @
 ;
 
-: MARK_VAR ( -- )
+: SET_HEADER_BIT ( idx -- , sets word bit)
+    >R
     DICT_CURRENT 2 +
     DUP @
-    1 31 LSHIFT    
+    1 R> LSHIFT    
     OR
     SWAP !
 ;
 
-: FORBID_TCO ( -- )
-    DICT_CURRENT 2 +
-    DUP @
-    1 30 LSHIFT    
-    OR
-    SWAP !
-;
-
-: SET_BIT_TBD ( -- )
-    DICT_CURRENT 2 +
-    DUP @
-    1 29 LSHIFT    
-    OR
-    SWAP !
-;
-
-: IMMEDIATE ( -- )
-    DICT_CURRENT 2 +
-    DUP @
-    1 28 LSHIFT    
-    OR
-    SWAP !
-;
+: MARK_VAR           ( -- ) 31 SET_HEADER_BIT ;
+: FORBID_TCO         ( -- ) 30 SET_HEADER_BIT ;
+( by default immediate words warn when being called directly from INTERPRET while STATE is 0)
+: ALLOW_INTERPRET    ( -- ) 29 SET_HEADER_BIT ;
+: IMMEDIATE          ( -- ) 28 SET_HEADER_BIT ;
 
 
 : RECURSE DICT_CURRENT , ; immediate

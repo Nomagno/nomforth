@@ -24,7 +24,7 @@ Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size) {
 }
 
 void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size,
-              _Bool p, _Bool forbid_tco, _Bool custom_bit_tbd, Cell *data, unsigned data_size) {
+              _Bool p, _Bool forbid_tco, _Bool allow_interpret, Cell *data, unsigned data_size) {
     Cell prev_loc = m[c->dict_pos_ptr];
     Cell prev_size = (prev_loc == 0) ? DICT_START : (3+(m[prev_loc+2] & 0x0000FFFF));
     m[c->dict_pos_ptr] = prev_loc + + prev_size;
@@ -32,7 +32,7 @@ void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size,
     Cell curr_loc = m[c->dict_pos_ptr];
     m[curr_loc] = prev_loc;
     m[curr_loc+1] = addToPad(c, m, name, name_size);
-    m[curr_loc+2] = (forbid_tco << 30) | (custom_bit_tbd << 29) | (p << 28) | (data_size & 0x0000FFFF);
+    m[curr_loc+2] = (forbid_tco << 30) | (allow_interpret << 29) | (p << 28) | (data_size & 0x0000FFFF);
     for (unsigned i = 0; i < data_size; i++)
         m[curr_loc+3+i] = data[i];
 }
@@ -291,11 +291,19 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
         if (w != 0) {
             /*Highest bit is for auxiliary info,
               second highest is for TCO permissions,
-              third highest is to be determined,
+              third highest is 0 if it is forbidden to interpret the word,
               fourth highest is for immediacy info
             */
             _Bool priority = m[w+2]>>28 & 1;
+            _Bool allow_interpreting = m[w+2]>>29 & 1;
             if (priority || m[c->compile_state_ptr] == 0) {
+                if (priority && !allow_interpreting && m[c->compile_state_ptr] == 0) {
+                    printf("{WARNING: SHOULD NOT INTERPRET COMPILE-ONLY WORD ");
+                    for (int i = 0; i < w_size; i++)
+                        printf("%c", lorig[i]);
+                    printf("}\n");
+                }
+
                 // Mark that lets the inner interpreter know
                 //  it's going back to the outer interpreter
                 funcPush(c, m, 0);
@@ -392,7 +400,7 @@ void initPrimitives(Ctx *c, Cell *m) {
             Cell tmpnatstring[strlen(primTable[i].name)];
             for (unsigned j = 0; j < strlen(primTable[i].name); j++)
                 tmpnatstring[j] = primTable[i].name[j];
-            makeWord(c, m, tmpnatstring, strlen(primTable[i].name), primTable[i].priority, primTable[i].forbid_tco, primTable[i].custom_bit_tbd, CA(t_primitive, i, t_end), 3);
+            makeWord(c, m, tmpnatstring, strlen(primTable[i].name), primTable[i].priority, primTable[i].forbid_tco, primTable[i].allow_interpret, CA(t_primitive, i, t_end), 3);
         }
     }
 }

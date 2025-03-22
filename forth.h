@@ -82,7 +82,7 @@ typedef struct {
     forthFunc func;
     _Bool priority;
     _Bool forbid_tco;
-    _Bool custom_bit_tbd;
+    _Bool allow_interpret;
     char *name;
 } PrimitiveData;
 
