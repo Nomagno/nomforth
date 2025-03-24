@@ -368,7 +368,7 @@ MAKEPRIM(geq){
 /*---------------------------------------------*/
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c, m);
-    if (ch >= 0x20 || ch <= 0x7E) {
+    if (ch >= 0x20 && ch <= 0x7E) {
         printf("%c", ch);
     } else if (ch == 0x0A) {
         printf("%c", ch);
