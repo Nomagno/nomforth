@@ -57,7 +57,6 @@
 : C_STRPTR_ADR 5 LIT, ; immediate
 : C_FLAGS_ADR 6 LIT, ; immediate
 : C_BASE_ADR 7 LIT, ; immediate
-: C_PAD_ADR 5119 LIT, ; immediate
 
 : DECIMAL 10 C_BASE_ADR ! ;
 : HEX 16 C_BASE_ADR ! ;
@@ -68,6 +67,7 @@
 : DP C_DICT_ADR ;
 
 HEX
+: C_PAD_ADR 9FFF LIT, ; immediate
 : USERMEM 6000 ;
 DECIMAL
 
@@ -160,11 +160,14 @@ DECIMAL
     SWAP !
 ; immediate
 
-: WHO ( xt -- xt_name_addr )
+: >NAME ( xt -- xt_name_addr )
     1 + @
 ;
 : >SIZE ( xt -- size of usable variable body assuming it was initialized with VARIABLE)
     RAW_VAR_SIZE 7 -
+;
+: >CODE ( xt -- first address of executable code)
+    3 +
 ;
 
 : >BODY ( xt -- body_start_addr)

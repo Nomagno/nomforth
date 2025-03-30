@@ -8,7 +8,7 @@
 ;
 
 : PRINTNEXT ( adr -- , prints values pointed to by next cell) 1 + @ . ;
-: PRINTWORD ( xt -- , prints name of represented by xt) WHO COUNT TYPE ;
+: PRINTWORD ( xt -- , prints name of represented by xt) >NAME COUNT TYPE ;
 
 : TABS 2 * SPACES ;
 : GEO_RECIP ( n m -- x )
@@ -57,7 +57,7 @@
         LOOP
     ELSE
         STRLIT" : "
-        DUP WHO COUNT TYPE CR
+        DUP >NAME COUNT TYPE CR
         DUP RAW_VAR_SIZE 3 - 0 ?DO
             1 TABS
             STRLIT" ["

@@ -240,13 +240,6 @@
 ( OUTPUT: 5 ok)
 
 ( Local registers code)
-( BEWARE! SINCE YOU CAN NOT USE ; NOR EXIT)
-( IN A local-mode WORD, INSTEAD USING)
-( LEXIT AND ;;, YOU CAN NOT TAKE ADVANTAGE)
-( OF TAIL-CALL OPTIMIZATION.)
-( PLEASE DECLARE NORMAL WORDS AND LIMIT)
-( THE local-mode TO WORD FACTORS)
-( IF YOU NEED TCO)
 30 ARRAY lspA
 VARIABLE lsp
 ( "locals stack pointer")
@@ -271,23 +264,17 @@ lspA CONSTANT lsp_start
 : b> ( -- n ) lsp @  1 + @ ;
 : c> ( -- n ) lsp @  2 + @ ;
 
-( -- , starts local-mode word)
+( -- , starts local-mode word, puts the cleanup code in the return stack)
 : ::
-    :  PPW lsp->
+    :
+    PPW lsp->
+    ( substract 1 because the convention dictates the callee will increment it)
+    ['] <-lsp >CODE 1 - LIT,
+    PPW >r
 ;
 
-( -- , ends local-mode word)
-: ;;
-    PPW <-lsp
-    POSTPONE ;
-; immediate
-
-( -- , exit for local-mode words )
-( running exit compiles an exit label into the current word)
-: LEXIT  PPW <-lsp  POSTPONE EXIT ; immediate
-
 ( example usage that prints 2 1:)
-( :: te 1 >c 2 . c> . LEXIT ;; )
+( :: te 1 >c 2 . c> . ; )
 
 
 ( -- n, where n is 0 if an invalid character was entered, and a code 1-26 if a lowercase alphabet letter was entered)
