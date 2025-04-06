@@ -48,13 +48,12 @@ MAKEPRIM(backslash) {
     if (w_size == 0) { }
     else { c->inter_str++; }
 }
-/* Quit the interpreter immediatel*/
+/* Quit the interpreter immediately*/
 /*---------------------------------------------*/
 MAKEPRIM(bye) {
     printf("\nThanks for using nomForth.\n");
     exit(0);
 }
-
 /* Manipulate words*/
 /*---------------------------------------------*/
 MAKEPRIM(emptyword) {
@@ -109,6 +108,35 @@ MAKEPRIM(rget) {
 MAKEPRIM(rsend) {
     R_SAVE();
     dataPush(c, m, funcPop(c, m));
+    R_RESTORE();
+}
+MAKEPRIM(2fetch) {
+    Cell adr = dataPop(c, m);
+    dataPush(c, m, m[adr]);
+    dataPush(c, m, m[adr+1]);
+}
+MAKEPRIM(2store) {
+    Cell adr = dataPop(c, m);
+    Cell val2 = dataPop(c, m);
+    Cell val1 = dataPop(c, m);
+    // Yes, they are stored in reverse according to the standard
+    m[adr] = val2;
+    m[adr+1] = val1;
+}
+MAKEPRIM(2rget) {
+    R_SAVE();
+    Cell w2 = dataPop(c, m);
+    Cell w1 = dataPop(c, m);
+    funcPush(c, m, w1);
+    funcPush(c, m, w2);
+    R_RESTORE();
+}
+MAKEPRIM(2rsend) {
+    R_SAVE();
+    Cell w2 = funcPop(c, m);
+    Cell w1 = funcPop(c, m);
+    dataPush(c, m, w1);
+    dataPush(c, m, w2);
     R_RESTORE();
 }
 /* Reading data from the input stream*/
@@ -193,24 +221,6 @@ MAKEPRIM(postpone) {
 
     appendWord(c, m, CA(found_word), 1);
 }
-
-MAKEPRIM(getchar){
-    uint8_t w1 = getchar();
-    if (w1 == '\n') w1 = 0;
-    dataPush(c, m, w1);
-    if (w1 == '\n') return;
-    else while (getchar() != '\n');
-}
-
-MAKEPRIM(getnum){
-    Cell w1;
-    _Bool found = scanf("%d", &w1);
-    while (getchar() != '\n');
-
-    if (found) dataPush(c, m, w1);
-    else       dataPush(c, m, -1);
-}
-
 MAKEPRIM(evaluate){
     Cell s = dataPop(c, m);
     Cell adr = dataPop(c, m);
@@ -240,7 +250,6 @@ MAKEPRIM(heap_init){
 MAKEPRIM(defrag){
     OA_defrag();
 }
-
 MAKEPRIM(allocate){
     Cell s = dataPop(c, m);
     if (s == 0) return;
@@ -248,124 +257,101 @@ MAKEPRIM(allocate){
     mem = (mem == NIL) ? 0 : (mem + c->heap_start);
     dataPush(c, m, mem);
 }
-
 MAKEPRIM(free){
     Cell mem = dataPop(c, m);
     mem = (mem == 0) ? NIL : (mem - c->heap_start);
     OA_free(mem);
 }
 
-
 /* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
 /*---------------------------------------------*/
-MAKEPRIM(add){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, w2+w1);
-}
-MAKEPRIM(minus){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, w2-w1);
-}
-MAKEPRIM(mult){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, w2*w1);
-}
-MAKEPRIM(div){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, w2/w1);
-}
-MAKEPRIM(mod){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, w2%w1);
-}
-MAKEPRIM(rshift){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
- dataPush(c, m, w2>>w1);
-}
-MAKEPRIM(lshift){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
- dataPush(c, m, w2<<w1);
-}
-MAKEPRIM(max){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, (w1>w2) ? w1 : w2);
-}
-MAKEPRIM(min){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, (w1<w2) ? w1 : w2);
-}
-MAKEPRIM(arith_not){
- Cell w1 = dataPop(c, m);
- dataPush(c, m, -w1);
-}
-MAKEPRIM(bitwise_not){
- Cell w1 = dataPop(c, m);
- dataPush(c, m, ~w1);
-}
-MAKEPRIM(logical_not){
- Cell w1 = dataPop(c, m);
- dataPush(c, m, w1 ? BOOL(0) : BOOL(1));
-}
-MAKEPRIM(and){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
- dataPush(c, m, w2&w1);
-}
-MAKEPRIM(or){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
- dataPush(c, m, w2|w1);
-}
-MAKEPRIM(xor){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
- dataPush(c, m, w2^w1);
-}
-MAKEPRIM(abs){
- int32_t w1 = dataPop(c, m);
- dataPush(c, m, (w1 < 0) ? -w1 : w1);
-}
-MAKEPRIM(eq){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
- dataPush(c, m, BOOL(w2==w1));
-}
-MAKEPRIM(neq){
- Cell w1 = dataPop(c, m);
- Cell w2 = dataPop(c, m);
- dataPush(c, m, BOOL(w2!=w1));
-}
-MAKEPRIM(le){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, BOOL(w2<w1));
-}
-MAKEPRIM(leq){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, BOOL(w2<=w1));
-}
-MAKEPRIM(gr){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, BOOL(w2>w1));
-}
-MAKEPRIM(geq){
- int32_t w1 = dataPop(c, m);
- int32_t w2 = dataPop(c, m);
- dataPush(c, m, BOOL(w2>=w1));
-}
-/*Printing strings, numbers, memory, etc.*/
+#define INIT(_name) Cell _name = dataPop(c, m);
+#define RINIT(_name) Cell _name = funcPop(c, m);
+#define INIT_I(_name) int32_t _name = dataPop(c, m);
+#define PUSH(...) dataPush(c, m, __VA_ARGS__)
+#define RPUSH(...) funcPush(c, m, __VA_ARGS__)
+#define OP_UN(_name, ...) MAKEPRIM(_name) { INIT_I(w1); PUSH(__VA_ARGS__); }
+#define OP_BIN(_name, ...) MAKEPRIM(_name) { INIT_I(w2); INIT_I(w1); PUSH(__VA_ARGS__); }
+
+#define ENABLE_HACK
+#include "ugly_stackeffects.h"
+
+// Eff/Reff interface: 'ni' is number of inputs (will be popped as w1, w2, w3... WHERE THE TOP OF THE STACK IS THE HIGHEST wN)
+// It defines a primitive that takes that many inputs from the start, pushes as many outputs as defined in 'no',
+// and then you can list the order (WHERE RIGHTMOST=TOP OF STACK) you want them to be pushed in.
+// You can put any expression in the output, really
+#define EFF(ni, no, _name, ...) EFF_##ni(_name, ;, ;, P_##no(__VA_ARGS__))
+#define REFF(ni, no, _name, ...) REFF_##ni(_name, R_SAVE(), R_RESTORE(), RP_##no(__VA_ARGS__))
+
+
+OP_BIN(add,    w1+w2);
+OP_BIN(minus,  w1-w2);
+OP_BIN(mult,   w1*w2);
+OP_BIN(div,    w1/w2);
+OP_BIN(mod,    w1%w2);
+OP_BIN(rshift, w1>>w2);
+OP_BIN(lshift, w1<<w2);
+OP_BIN(max,    (w1>w2) ? w1 : w2);
+OP_BIN(min,    (w1<w2) ? w1 : w2);
+OP_BIN(and,    w1&w2);
+OP_BIN(or,     w1|w2);
+OP_BIN(xor,    w1^w2);
+OP_BIN(eq,     BOOL(w1==w2));
+OP_BIN(neq,    BOOL(w1!=w2));
+OP_BIN(le,     BOOL(w1<w2));
+OP_BIN(leq,    BOOL(w1<=w2));
+OP_BIN(gr,     BOOL(w1>w2));
+OP_BIN(geq,    BOOL(w1>=w2));
+
+OP_UN(abs,         (w1 < 0) ? -w1 : w1);
+OP_UN(arith_not,   -w1);
+OP_UN(bitwise_not, ~w1);
+OP_UN(logical_not,  w1 ? BOOL(0) : BOOL(1));
+
+// Any possible warnings are just unused vars
+
+/*Simple data stack manipulation*/
+EFF(1, 0, drop) // ( w -- )
+EFF(2, 1, nip, w2) // ( w1 w2 -- w2)
+EFF(1, 2, dup, w1, w1) // ( w -- w w)
+EFF(2, 3, over, w1, w2, w1) // ( w1 w2 -- w1 w2 w1)
+EFF(2, 2, swap, w2, w1) // ( w1 w2 -- w2 w1)
+EFF(3, 3, rot, w2, w3, w1) // ( w1 w2 w3 -- w2 w3 w1)
+EFF(2, 3, tuck, w2, w1, w2) // ( w1 w2 -- w2 w1 w2)
+EFF(2, 0, 2drop) // ( w1 w2 -- )
+EFF(4, 2, 2nip, w3, w4) // ( w1 w2 w3 w4 -- w3 w4)
+EFF(2, 4, 2dup, w1, w2, w1, w2) // ( w1 w2 -- w1 w2 w1 w2)
+EFF(4, 6, 2over, w1, w2, w3, w4, w1, w2) // ( w1 w2 w3 w4 -- w1 w2 w3 w4 w1 w2)
+EFF(4, 4, 2swap, w3, w4, w1, w2) // ( w1 w2 w3 w4 -- w3 w4 w1 w2)
+EFF(6, 6, 2rot, w3, w4, w5, w6, w1, w2) // ( w1 w2 w3 w4 w5 w6 -- w3 w4 w5 w6 w1 w2)
+EFF(4, 6, 2tuck, w3, w4, w1, w2, w3, w4) // ( w1 w2 w3 w4 -- w3 w4 w1 w2 w3 w4)
+
+/* Return stack manipulation */
+REFF(1, 0, rdrop) // R( w -- )
+REFF(2, 1, rnip, w2) // R( w1 w2 -- w2)
+REFF(1, 2, rdup, w1, w1) // R( w -- w w)
+REFF(2, 3, rover, w1, w2, w1) // R( w1 w2 -- w1 w2 w1)
+REFF(2, 2, rswap, w2, w1) // R( w1 w2 -- w2 w1)
+REFF(3, 3, rrot, w2, w3, w1) // R( w1 w2 w3 -- w2 w3 w1)
+REFF(2, 3, rtuck, w2, w1, w2) // R( w1 w2 -- w2 w1 w2)
+
+/*Printing and reading strings, numbers, memory, etc.*/
 /*---------------------------------------------*/
+MAKEPRIM(getchar){
+    uint8_t w1 = getchar();
+    if (w1 == '\n') w1 = 0;
+    dataPush(c, m, w1);
+    if (w1 == '\n') return;
+    else while (getchar() != '\n');
+}
+MAKEPRIM(getnum){
+    Cell w1;
+    _Bool found = scanf("%d", &w1);
+    while (getchar() != '\n');
+
+    if (found) dataPush(c, m, w1);
+    else       dataPush(c, m, -1);
+}
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c, m);
     if (ch >= 0x20 && ch <= 0x7E) {
@@ -443,218 +429,4 @@ MAKEPRIM(udotstackret) {
         printf(" %u", m[c->fstack_start+i]);
     }
     printf(" |");
-}
-/*Simple data stack manipulation*/
-/*---------------------------------------------*/
-// ( w -- )
-MAKEPRIM(drop) {
-    dataPop(c, m);
-}
-// ( w1 w2 -- w2)
-MAKEPRIM(nip) {
-    Cell w2 = dataPop(c, m);
-    dataPop(c, m);
-    dataPush(c, m, w2);
-}
-// ( w -- w w)
-MAKEPRIM(dup) {
-    Cell w1 = dataPeek(c, m);
-    dataPush(c, m, w1);
-}
-// ( w1 w2 -- w1 w2 w1)
-MAKEPRIM(over) {
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPeek(c, m);
-    dataPush(c, m, w2);
-    dataPush(c, m, w1);
-}
-// ( w1 w2 -- w2 w1)
-MAKEPRIM(swap) {
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    dataPush(c, m, w2);
-    dataPush(c, m, w1);
-}
-// ( w1 w2 w3 -- w2 w3 w1)
-MAKEPRIM(rot) {
-    Cell w3 = dataPop(c, m);
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    dataPush(c, m, w2);
-    dataPush(c, m, w3);
-    dataPush(c, m, w1);
-}
-// ( w1 w2 -- w2 w1 w2)
-MAKEPRIM(tuck) {
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    dataPush(c, m, w2);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-}
-/* Pair-wise data stack manipulation*/
-/*---------------------------------------------*/
-MAKEPRIM(2fetch) {
-    Cell adr = dataPop(c, m);
-    dataPush(c, m, m[adr]);
-    dataPush(c, m, m[adr+1]);
-}
-MAKEPRIM(2store) {
-    Cell adr = dataPop(c, m);
-    Cell val2 = dataPop(c, m);
-    Cell val1 = dataPop(c, m);
-    // Yes, they are stored in reverse according to the standard
-    m[adr] = val2;
-    m[adr+1] = val1;
-}
-MAKEPRIM(2rget) {
-    R_SAVE();
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    funcPush(c, m, w1);
-    funcPush(c, m, w2);
-    R_RESTORE();
-}
-MAKEPRIM(2rsend) {
-    R_SAVE();
-    Cell w2 = funcPop(c, m);
-    Cell w1 = funcPop(c, m);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-    R_RESTORE();
-}
-// ( w1 w2 -- )
-MAKEPRIM(2drop) {
-    dataPop(c, m);
-    dataPop(c, m);
-}
-// ( w1 w2 w3 w4 -- w3 w4)
-MAKEPRIM(2nip) {
-    Cell w4 = dataPop(c, m);
-    Cell w3 = dataPop(c, m);
-    dataPop(c, m);
-    dataPop(c, m);
-    dataPush(c, m, w3);
-    dataPush(c, m, w4);
-}
-// ( w1 w2 -- w1 w2 w1 w2)
-MAKEPRIM(2dup) {
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPeek(c, m);
-    dataPush(c, m, w2);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-}
-// ( w1 w2 w3 w4 -- w1 w2 w3 w4 w1 w2)
-MAKEPRIM(2over) {
-    Cell w4 = dataPop(c, m);
-    Cell w3 = dataPop(c, m);
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPeek(c, m);
-    dataPush(c, m, w2);
-    dataPush(c, m, w3);
-    dataPush(c, m, w4);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-}
-// ( w1 w2 w3 w4 -- w3 w4 w1 w2)
-MAKEPRIM(2swap) {
-    Cell w4 = dataPop(c, m);
-    Cell w3 = dataPop(c, m);
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    dataPush(c, m, w3);
-    dataPush(c, m, w4);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-}
-// ( w1 w2 w3 w4 w5 w6 -- w3 w4 w5 w6 w1 w2)
-MAKEPRIM(2rot) {
-    Cell w6 = dataPop(c, m);
-    Cell w5 = dataPop(c, m);
-    Cell w4 = dataPop(c, m);
-    Cell w3 = dataPop(c, m);
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    dataPush(c, m, w3);
-    dataPush(c, m, w4);
-    dataPush(c, m, w5);
-    dataPush(c, m, w6);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-}
-// ( w1 w2 w3 w4 -- w3 w4 w1 w2 w3 w4)
-MAKEPRIM(2tuck) {
-    Cell w4 = dataPop(c, m);
-    Cell w3 = dataPop(c, m);
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    dataPush(c, m, w3);
-    dataPush(c, m, w4);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-    dataPush(c, m, w3);
-    dataPush(c, m, w4);
-}
-/* Return stack manipulation */
-/*---------------------------------------------*/
-// R( w -- )
-MAKEPRIM(rdrop) {
-    R_SAVE();
-    funcPop(c, m);
-    R_RESTORE();
-}
-// R( w1 w2 -- w2)
-MAKEPRIM(rnip) {
-    R_SAVE();
-    Cell w2 = funcPop(c, m);
-    funcPop(c, m);
-    funcPush(c, m, w2);
-    R_RESTORE();
-}
-// R( w -- w w)
-MAKEPRIM(rdup) {
-    R_SAVE();
-    Cell w1 = funcPeek(c, m);
-    funcPush(c, m, w1);
-    R_RESTORE();
-}
-// R( w1 w2 -- w1 w2 w1)
-MAKEPRIM(rover) {
-    R_SAVE();
-    Cell w2 = funcPop(c, m);
-    Cell w1 = funcPeek(c, m);
-    funcPush(c, m, w2);
-    funcPush(c, m, w1);
-    R_RESTORE();
-}
-// R( w1 w2 -- w2 w1)
-MAKEPRIM(rswap) {
-    R_SAVE();
-    Cell w2 = funcPop(c, m);
-    Cell w1 = funcPop(c, m);
-    funcPush(c, m, w2);
-    funcPush(c, m, w1);
-    R_RESTORE();
-}
-// R( w1 w2 w3 -- w2 w3 w1)
-MAKEPRIM(rrot) {
-    R_SAVE();
-    Cell w3 = funcPop(c, m);
-    Cell w2 = funcPop(c, m);
-    Cell w1 = funcPop(c, m);
-    funcPush(c, m, w2);
-    funcPush(c, m, w3);
-    funcPush(c, m, w1);
-    R_RESTORE();
-}
-// R( w1 w2 -- w2 w1 w2)
-MAKEPRIM(rtuck) {
-    R_SAVE();
-    Cell w2 = funcPop(c, m);
-    Cell w1 = funcPop(c, m);
-    funcPush(c, m, w2);
-    funcPush(c, m, w1);
-    funcPush(c, m, w2);
-    R_RESTORE();
 }
