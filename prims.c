@@ -14,15 +14,19 @@
 
 PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 
+#define WARNING(name) printf("WARNING: '%s' called with no name\n", #name)
+#define C_LOR() Cell *lorig = c->inter_str-w_size;
+#define CONSUMER(ch, post_action, nonzero_size, ...) \
+    int w_size = advanceTo(&c->inter_str, c->inter_max, ch, 1); \
+    if (w_size < 0) { w_size = -w_size; } \
+    if (w_size == 0) { __VA_ARGS__; } \
+    else { nonzero_size; } \
+    post_action
+
 /* The forth core words: declare a new word, and end it */
 MAKEPRIM(colon) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: word created with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER(' ', C_LOR(), , WARNING(colon));
     makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
-
     m[c->compile_state_ptr] = 1;
 }
 MAKEPRIM(colonAnon) {
@@ -30,58 +34,32 @@ MAKEPRIM(colonAnon) {
     m[c->compile_state_ptr] = 1;
     dataPush(c, m, m[c->dict_pos_ptr]);
 }
-MAKEPRIM(semicolon){
-    appendWord(c, m, CA(t_end), 1);
-    m[c->compile_state_ptr] = 0;
-}
+MAKEPRIM(semicolon){ appendWord(c, m, CA(t_end), 1); m[c->compile_state_ptr] = 0; }
 /* Comments*/
 /*---------------------------------------------*/
-MAKEPRIM(leftparen) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ')', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { }
-    else { c->inter_str++; }
-}
-MAKEPRIM(backslash) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, '\n', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { }
-    else { c->inter_str++; }
-}
+MAKEPRIM(leftparen) { CONSUMER(')', , c->inter_str++, ); }
+MAKEPRIM(backslash) { CONSUMER('\n', , c->inter_str++, ); }
 /* Quit the interpreter immediately*/
 /*---------------------------------------------*/
-MAKEPRIM(bye) {
-    printf("\nThanks for using nomForth.\n");
-    exit(0);
-}
+MAKEPRIM(bye) { printf("\nThanks for using nomForth.\n"); exit(0); }
+
 /* Manipulate words*/
 /*---------------------------------------------*/
 MAKEPRIM(emptyword) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'EMPTY_WORD' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER(' ', C_LOR(), , WARNING(empty_word));
     makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
 }
 MAKEPRIM(create) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'CREATE' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER(' ', C_LOR(), , WARNING(create));
     makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
     m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable by setting highest bit*/
     appendWord(c, m, CA(t_num, m[c->dict_pos_ptr]+7), 2); // +3, pointer to first empty cell
     appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
 }
-MAKEPRIM(comma) {
-    Cell val = dataPop(c, m);
-    appendWord(c, m, CA(val), 1);
-}
-MAKEPRIM(worddoesprim) {
+MAKEPRIM(comma) { Cell val = dataPop(c, m); appendWord(c, m, CA(val), 1); }
+MAKEPRIM(worddoesprim) { // DO NOT CALL THE WORDDOESPRIM C PRIMITIVE DIRECTLY!
     Cell current_word = m[c->dict_pos_ptr];
-    Cell pc = funcPeek(c, m); // DO NOT CALL WORDDOESPRIM EXCEPT THROUGH THE DICTIONARY INTERFACE! IT DOES CALLSTACK MANIPULATION!
+    Cell pc = funcPeek(c, m); 
     m[current_word+5] = t_absjump; // replace first dummy END created by VAR with a jump
     m[current_word+6] = pc+2; //replace other dummy END with jump value
 }
@@ -90,77 +68,18 @@ MAKEPRIM(worddoes) {
     appendWord(c, m, CA(appended_w), 1);
     appendWord(c, m, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
-/* Memory manipulation, returnstack-datastack interaction */
-/*---------------------------------------------*/
-MAKEPRIM(fetch) {
-    dataPush(c, m, m[dataPop(c, m)]);
-}
-MAKEPRIM(store) {
-    Cell adr = dataPop(c, m);
-    Cell val = dataPop(c, m);
-    m[adr] = val;
-}
-MAKEPRIM(rget) {
-    R_SAVE();
-    funcPush(c, m, dataPop(c, m));
-    R_RESTORE();
-}
-MAKEPRIM(rsend) {
-    R_SAVE();
-    dataPush(c, m, funcPop(c, m));
-    R_RESTORE();
-}
-MAKEPRIM(2fetch) {
-    Cell adr = dataPop(c, m);
-    dataPush(c, m, m[adr]);
-    dataPush(c, m, m[adr+1]);
-}
-MAKEPRIM(2store) {
-    Cell adr = dataPop(c, m);
-    Cell val2 = dataPop(c, m);
-    Cell val1 = dataPop(c, m);
-    // Yes, they are stored in reverse according to the standard
-    m[adr] = val2;
-    m[adr+1] = val1;
-}
-MAKEPRIM(2rget) {
-    R_SAVE();
-    Cell w2 = dataPop(c, m);
-    Cell w1 = dataPop(c, m);
-    funcPush(c, m, w1);
-    funcPush(c, m, w2);
-    R_RESTORE();
-}
-MAKEPRIM(2rsend) {
-    R_SAVE();
-    Cell w2 = funcPop(c, m);
-    Cell w1 = funcPop(c, m);
-    dataPush(c, m, w1);
-    dataPush(c, m, w2);
-    R_RESTORE();
-}
 /* Reading data from the input stream*/
 /*---------------------------------------------*/
 MAKEPRIM(b_char_b) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: '[CHAR]' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
+    CONSUMER(' ', C_LOR(), , WARNING([char]));
     appendWord(c, m, CA(t_num, lorig[0]), 2);
 }
 MAKEPRIM(char) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'CHAR' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
+    CONSUMER(' ', C_LOR(), , WARNING(char));
     dataPush(c, m, lorig[0]);
 }
 MAKEPRIM(word) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, (char)dataPop(c, m), 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'WORD' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER((char)dataPop(c, m), C_LOR(), , WARNING(word))
     Cell created_string = addToPad(c, m, lorig, w_size);
     dataPush(c, m, created_string);
 }
@@ -170,16 +89,11 @@ MAKEPRIM(parse) {
     if (w_size == 0) { printf("WARNING: 'PARSER' called with no name\n"); }
     Cell *lorig = c->inter_str-w_size;
     c->inter_str += 1;
-
     Cell created_string = addToPad(c, m, lorig, w_size);
     dataPush(c, m, created_string);
 }
 MAKEPRIM(parse_name) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'PASER-NAME' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER(' ', C_LOR(), , WARNING(parse_name));
     Cell created_string = addToPad(c, m, lorig, w_size);
     dataPush(c, m, created_string);
 }
@@ -190,13 +104,8 @@ MAKEPRIM(find) {
     else { dataPush(c, m, found_word); dataPush(c, m, ((m[found_word+2] >> 24) != 0) ? 1 : -1); }
 }
 MAKEPRIM(is) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'IS' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER(' ', C_LOR(), , WARNING(is));
     Cell assigned_word = findWord(c, m, 'n', lorig, w_size);
-
     Cell popped_xt = dataPop(c, m);
     if ((m[assigned_word+2] & 0x0000FFFF) >= 1)
         m[assigned_word+3] = popped_xt;
@@ -204,31 +113,19 @@ MAKEPRIM(is) {
         printf("{ERROR: Can't assign to non-deferred word with inappropiate size %u}\n", m[assigned_word]);
 }
 MAKEPRIM(defer) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'DEFER' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER(' ', C_LOR(), , WARNING(edfer));
     makeWord(c, m, lorig, w_size, 0, 0, 0, CA(t_end, t_end), 2);
 }
 MAKEPRIM(postpone) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
-    if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'POSTPONE' called with no name\n"); }
-    Cell *lorig = c->inter_str-w_size;
-
+    CONSUMER(' ', C_LOR(), , WARNING(postpone));
     Cell found_word = findWord(c, m, 'n', lorig, w_size);
-
     appendWord(c, m, CA(found_word), 1);
 }
 MAKEPRIM(evaluate){
-    Cell s = dataPop(c, m);
-    Cell adr = dataPop(c, m);
+    Cell s = dataPop(c, m), adr = dataPop(c, m);
     // Set up our own stack frame on the native stack
-    // Evaluate is the only word that can
-    //  result in a native stack overflow,
-    //  so please don't somehow use it
-    //  recursively.
+    //  Evaluate is the only word that can result in a native stack overflow,
+    //  so please don't somehow use it recursively.
     Cell *inter_max = c->inter_max;
     Cell *inter_min = c->inter_min;
     Cell *inter_str = c->inter_str;
@@ -244,24 +141,14 @@ MAKEPRIM(evaluate){
 
 /*Interface to Offset-based allocator in oa.h*/
 /*---------------------------------------------*/
-MAKEPRIM(heap_init){
-    OA_init(m+c->heap_start, 0x2000);
-}
-MAKEPRIM(defrag){
-    OA_defrag();
-}
+MAKEPRIM(heap_init){ OA_init(m+c->heap_start, 0x2000); }
+MAKEPRIM(defrag){ OA_defrag(); }
 MAKEPRIM(allocate){
-    Cell s = dataPop(c, m);
-    if (s == 0) return;
-    Cell mem = OA_malloc(s);
+    Cell mem = OA_malloc(dataPop(c, m));
     mem = (mem == NIL) ? 0 : (mem + c->heap_start);
     dataPush(c, m, mem);
 }
-MAKEPRIM(free){
-    Cell mem = dataPop(c, m);
-    mem = (mem == 0) ? NIL : (mem - c->heap_start);
-    OA_free(mem);
-}
+MAKEPRIM(free){ Cell mem = dataPop(c, m); if (mem == 0) return; OA_free(mem - c->heap_start); }
 
 /* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
 /*---------------------------------------------*/
@@ -335,6 +222,32 @@ REFF(2, 2, rswap, w2, w1) // R( w1 w2 -- w2 w1)
 REFF(3, 3, rrot, w2, w3, w1) // R( w1 w2 w3 -- w2 w3 w1)
 REFF(2, 3, rtuck, w2, w1, w2) // R( w1 w2 -- w2 w1 w2)
 
+/* Memory manipulation, returnstack-datastack interaction */
+/*---------------------------------------------*/
+MAKEPRIM(fetch) { dataPush(c, m, m[dataPop(c, m)]); }
+MAKEPRIM(store) { Cell adr = dataPop(c, m), val = dataPop(c, m); m[adr] = val; }
+MAKEPRIM(rget) { R_SAVE(); funcPush(c, m, dataPop(c, m)); R_RESTORE(); }
+MAKEPRIM(rsend) { R_SAVE(); dataPush(c, m, funcPop(c, m)); R_RESTORE(); }
+MAKEPRIM(2fetch) { Cell adr = dataPop(c, m); dataPush(c, m, m[adr]); dataPush(c, m, m[adr+1]); }
+MAKEPRIM(2store) {
+    Cell adr = dataPop(c, m), val2 = dataPop(c, m), val1 = dataPop(c, m);
+    // Yes, they are stored in reverse according to the standard
+    m[adr] = val2;
+    m[adr+1] = val1;
+}
+MAKEPRIM(2rget) {
+    R_SAVE();
+    Cell w2 = dataPop(c, m), w1 = dataPop(c, m);
+    funcPush(c, m, w1); funcPush(c, m, w2);
+    R_RESTORE();
+}
+MAKEPRIM(2rsend) {
+    R_SAVE();
+    Cell w2 = funcPop(c, m), w1 = funcPop(c, m);
+    dataPush(c, m, w1); dataPush(c, m, w2);
+    R_RESTORE();
+}
+
 /*Printing and reading strings, numbers, memory, etc.*/
 /*---------------------------------------------*/
 MAKEPRIM(getchar){
@@ -348,52 +261,34 @@ MAKEPRIM(getnum){
     Cell w1;
     _Bool found = scanf("%d", &w1);
     while (getchar() != '\n');
-
     if (found) dataPush(c, m, w1);
     else       dataPush(c, m, -1);
 }
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c, m);
-    if (ch >= 0x20 && ch <= 0x7E) {
-        printf("%c", ch);
-    } else if (ch == 0x0A) {
-        printf("%c", ch);
-    } else {
-        printf("[0x%X]", ch);
-    }
+    if (ch >= 0x20 && ch <= 0x7E) printf("%c", ch);
+    else if (ch == 0x0A)          printf("%c", ch);
+    else                          printf("[0x%X]", ch);
 }
 MAKEPRIM(type){
-    Cell size = dataPop(c, m);
-    Cell str = dataPop(c, m);
-    if (size == 0) {
-        printf("[EMPTY_STR]");
-    }
+    Cell size = dataPop(c, m), str = dataPop(c, m);
+    if (size == 0) printf("[EMPTY_STR]");
     for (unsigned i = 0; i < size; i++) {
         printf("%c", (unsigned char)m[str+i]);
     }
 }
-MAKEPRIM(cr) {
-    printf("\n");
-}
+MAKEPRIM(cr) { printf("\n"); }
 MAKEPRIM(spaces) {
     Cell x = dataPop(c, m);
     for (unsigned i = 0; i < x; i++) {
         printf(" ");
     }
 }
-MAKEPRIM(dot) {
-    printf(" %d", dataPop(c, m));
-}
-MAKEPRIM(udot) {
-    printf(" %u", dataPop(c, m));
-}
-MAKEPRIM(xdot) {
-    printf(" %08X", dataPop(c, m));
-}
+MAKEPRIM(dot) { printf(" %d", dataPop(c, m)); }
+MAKEPRIM(udot) { printf(" %u", dataPop(c, m)); }
+MAKEPRIM(xdot) { printf(" %08X", dataPop(c, m)); }
 MAKEPRIM(dotmem) {
-    Cell start = dataPop(c, m);
-    Cell end = dataPop(c, m);
-    Cell step = dataPop(c, m);
+    Cell start = dataPop(c, m), end = dataPop(c, m), step = dataPop(c, m);
     printMemory(m, start, end, step);
 }
 MAKEPRIM(dotstack) {
