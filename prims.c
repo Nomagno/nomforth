@@ -16,6 +16,11 @@ PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 
 #define WARNING(name) printf("WARNING: '%s' called with no name\n", #name)
 #define C_LOR() Cell *lorig = c->inter_str-w_size;
+/* CONSUMER is a macro to reflect a very common forth pattern:
+ * A word that hijacks the input stream, advances it until the next character
+ * of a certain type is found (skipping all initial consecutive occurences of the
+ * character), and depending on if 0 or non-0 significant characters were advanced,
+ * performs different actions. Then, performs an action unconditionally. */
 #define CONSUMER(ch, post_action, nonzero_size, ...) \
     int w_size = advanceTo(&c->inter_str, c->inter_max, ch, 1); \
     if (w_size < 0) { w_size = -w_size; } \
