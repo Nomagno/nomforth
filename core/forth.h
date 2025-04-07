@@ -140,6 +140,6 @@ int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leadin
 
 #define BOOL(x) (x ? ((Cell)-1) : 0)
 
-#include "prims.h"
+#include "../primitives/prims.h"
 
 #endif

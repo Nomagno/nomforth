@@ -1,3 +1,5 @@
+( Provides the disassembler words 'SEE' and 'XT-SEE')
+
 : COUNT_DIGITS ( x -- number_of_digits_of_x )
     1 SWAP
     BEGIN DUP 9 > WHILE

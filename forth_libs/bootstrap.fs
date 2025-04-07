@@ -2,6 +2,9 @@
 ( Copyright 2025 Nomagno )
 ( MIT License )
 
+( Build the regular forth language, smoothing out inconsistencies)
+( Note this only builds a barebones core, also include utilities.fs for a usable language)
+
 : DICT_CURRENT ( -- current_dictionary_word_start)
     ( We can not do this because we do not have the word defined yet:)
     ( C_DICT_ADR @)

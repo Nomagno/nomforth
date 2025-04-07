@@ -2,6 +2,9 @@
 ( Copyright 2025 Nomagno )
 ( MIT License )
 
+( Makes nomforth usable by adding everything from looping constructs )
+( to anonymous functions to case statements to words with local variables )
+
 : CELLS ;
 : CELL 1 ;
 : CELL+ 1 + ;

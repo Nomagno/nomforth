@@ -3,7 +3,7 @@
 
 #ifndef _PRIMS_H
 #define _PRIMS_H
-#include "forth.h"
+#include "../core/forth.h"
 #include "oa.h"
 
 MAKEPRIM(colon);
