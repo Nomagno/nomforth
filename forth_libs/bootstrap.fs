@@ -37,7 +37,7 @@
 : LF 10 ;
 
 : LIT, 3 , , ;
-: LITERAL LIT, LITERAL ; immediate
+: LITERAL LIT, ; immediate
 
 : C_T_UNKNOWN 0 LIT, ; immediate
 : C_T_NOP 1 LIT, ; immediate
