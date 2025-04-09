@@ -3,20 +3,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <ctype.h>
 
 #include "forth.h"
+
+static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
+static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
 
 Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size) {
     if (s == NULL || *s == '\0') {
         return 0;
     }
-    unsigned i;
     Cell str_loc = m[c->pad_pos_ptr];
     Cell str_size = name_size+1;
     m[str_loc]=str_size;
-    for (i = 0; i < str_size-1; i++){
+    for (unsigned i = 0; i < str_size-1; i++){
         m[str_loc+1+i]=s[i];
     }
     m[c->pad_pos_ptr] = str_loc + str_size;
@@ -27,21 +28,19 @@ void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size,
               _Bool p, _Bool forbid_tco, _Bool allow_interpret, Cell *data, unsigned data_size) {
     Cell prev_loc = m[c->dict_pos_ptr];
     Cell prev_size = (prev_loc == 0) ? DICT_START : (3+(m[prev_loc+2] & 0x0000FFFF));
-    m[c->dict_pos_ptr] = prev_loc + + prev_size;
+    m[c->dict_pos_ptr] = prev_loc + prev_size;
 
     Cell curr_loc = m[c->dict_pos_ptr];
     m[curr_loc] = prev_loc;
     m[curr_loc+1] = addToPad(c, m, name, name_size);
     m[curr_loc+2] = (forbid_tco << 30) | (allow_interpret << 29) | (p << 28) | (data_size & 0x0000FFFF);
-    for (unsigned i = 0; i < data_size; i++)
-        m[curr_loc+3+i] = data[i];
+    for (unsigned i = 0; i < data_size; i++) m[curr_loc+3+i] = data[i];
 }
 
 Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size) {
     Cell curr_loc = m[c->dict_pos_ptr];
     unsigned size = 3+(m[curr_loc+2] & 0x0000FFFF);
-    for (unsigned i = 0; i < data_size; i++)
-        m[curr_loc+size+i] = data[i];
+    for (unsigned i = 0; i < data_size; i++) m[curr_loc+size+i] = data[i];
     m[curr_loc+2] += data_size;
 
     // Pointer to the last written byte of data,
@@ -119,9 +118,7 @@ Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size) {
             _Bool are_equal = 1;
             if (n_s != temp_s) are_equal = 0;
             for (i = 0; i < n_s && are_equal; i++) {
-                if (toupper(m[temp_loc+1+i]) != toupper(n[i])) {
-                    are_equal = 0;
-                }
+                if (toupper(m[temp_loc+1+i]) != toupper(n[i])) are_equal = 0;
             }
             if (are_equal && (i == n_s)) condition = 0;
             else {
@@ -145,9 +142,7 @@ Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size) {
             _Bool are_equal = 1;
             if (n_s != temp_s) are_equal = 0;
             for (i = 0; i < n_s && are_equal; i++) {
-                if (toupper(m[temp_loc+1+i]) != toupper((unsigned char)n[i])) {
-                    are_equal = 0;
-                }
+                if (toupper(m[temp_loc+1+i]) != toupper((unsigned char)n[i])) are_equal = 0;
             }
             if (are_equal && (i == n_s)) condition = 0;
             else {
@@ -266,14 +261,6 @@ int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leadin
 
     if (now > max) return -(now-orig);
     else return (now-orig);
-}
-
-size_t cell_strlen(const Cell *str)
-{
-        const Cell *s;
-        for (s = str; *s; ++s)
-                ;
-        return (s - str);
 }
 
 void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
@@ -399,10 +386,11 @@ void initPrimitives(Ctx *c, Cell *m) {
     {
         if (primTable[i].func == NULL) { }
         else {
-            Cell tmpnatstring[strlen(primTable[i].name)];
-            for (unsigned j = 0; j < strlen(primTable[i].name); j++)
+            unsigned name_size = char_strlen(primTable[i].name);
+            Cell tmpnatstring[name_size];
+            for (unsigned j = 0; j < name_size; j++)
                 tmpnatstring[j] = primTable[i].name[j];
-            makeWord(c, m, tmpnatstring, strlen(primTable[i].name), primTable[i].priority, primTable[i].forbid_tco, primTable[i].allow_interpret, CA(t_primitive, i, t_end), 3);
+            makeWord(c, m, tmpnatstring, name_size, primTable[i].priority, primTable[i].forbid_tco, primTable[i].allow_interpret, CA(t_primitive, i, t_end), 3);
         }
     }
 }
@@ -415,8 +403,6 @@ int main(void) {
     init(&myContext, memory);
 
     char line[1024];
-    char *linep = &line[0];
-    size_t lines = 1024;
 
     printf("Welcome to nomForth!\n"
            "To exit, type \'quit\'.\n");
@@ -431,14 +417,15 @@ int main(void) {
             break;
         }
 
-        int nread = getline(&linep, &lines, stdin);
-        line[nread-1] = '\0';
-        if (nread > 1) {
-            for (int i = 0; i < nread; i++)
+        fgets(line, sizeof(line), stdin);
+        unsigned linesize = char_strlen(line)-1; /*Exclude terminating newline*/
+        if (char_strlen(line) > 1) {
+            for (unsigned i = 0; i < linesize; i++)
                 memory[INBUF_START+i] = line[i];
+            memory[INBUF_START+linesize] = '\0';
             if (!silent)
                 printf("OUTPUT:");
-            interpret(&myContext, memory, &memory[INBUF_START], nread-1, silent);
+            interpret(&myContext, memory, &memory[INBUF_START], linesize, silent);
         }
     }
 }

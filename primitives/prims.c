@@ -2,7 +2,6 @@
 // MIT License
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include "prims.h"
 
@@ -27,6 +26,9 @@ PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
     if (w_size == 0) { __VA_ARGS__; } \
     else { nonzero_size; } \
     post_action
+
+static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
+static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
 
 /* The forth core words: declare a new word, and end it */
 MAKEPRIM(colon) {
@@ -69,7 +71,7 @@ MAKEPRIM(worddoesprim) { // DO NOT CALL THE WORDDOESPRIM C PRIMITIVE DIRECTLY!
     m[current_word+6] = pc+2; //replace other dummy END with jump value
 }
 MAKEPRIM(worddoes) {
-    Cell appended_w = findWord(c, m, 'c', "DOES>PRIM", strlen("DOES>PRIM"));
+    Cell appended_w = findWord(c, m, 'c', "DOES>PRIM", char_strlen("DOES>PRIM"));
     appendWord(c, m, CA(appended_w), 1);
     appendWord(c, m, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
@@ -256,6 +258,7 @@ MAKEPRIM(2rsend) {
 /*Printing and reading strings, numbers, memory, etc.*/
 /*---------------------------------------------*/
 MAKEPRIM(getchar){
+    fflush(stdout);
     uint8_t w1 = getchar();
     if (w1 == '\n') w1 = 0;
     dataPush(c, m, w1);
@@ -263,11 +266,15 @@ MAKEPRIM(getchar){
     else while (getchar() != '\n');
 }
 MAKEPRIM(getnum){
+    fflush(stdout);
     Cell w1;
     _Bool found = scanf("%d", &w1);
     while (getchar() != '\n');
     if (found) dataPush(c, m, w1);
     else       dataPush(c, m, -1);
+}
+MAKEPRIM(flushoutput){
+    fflush(stdout);
 }
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c, m);
