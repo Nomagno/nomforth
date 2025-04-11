@@ -273,6 +273,24 @@ MAKEPRIM(getnum){
     if (found) dataPush(c, m, w1);
     else       dataPush(c, m, -1);
 }
+MAKEPRIM(accept){
+    fflush(stdout);
+    Cell size_limit = dataPop(c, m);
+    Cell address = dataPop(c, m);
+    char tmp_str[size_limit];
+    unsigned i;
+    for (i = 0; i < size_limit; i++){
+        char c = getchar();
+        if (c == '\n') break;
+        else tmp_str[i] = c;
+    }
+    if (i >= size_limit) /*Read and discard until newline*/
+        for (int j = i; ; j++) { if (getchar() == '\n') break; }
+    for (unsigned k = 0; k < i; k++) {
+        m[address+k] = tmp_str[k];
+    }
+    dataPush(c, m, i);
+}
 MAKEPRIM(flushoutput){
     fflush(stdout);
 }

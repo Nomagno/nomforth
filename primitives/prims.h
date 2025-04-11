@@ -35,6 +35,7 @@ MAKEPRIM(defer);
 MAKEPRIM(postpone);
 MAKEPRIM(getchar);
 MAKEPRIM(getnum);
+MAKEPRIM(accept);
 MAKEPRIM(flushoutput);
 MAKEPRIM(evaluate);
 
@@ -150,6 +151,7 @@ MAKEPRIM(rtuck);
     {PRIM(postpone),     IMMEDIATE_WORD,  ALLOW_TCO, DISALLOW_INTERPRET, "POSTPONE"},  \
     {PRIM(getchar),         NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "GETC"},      \
     {PRIM(getnum),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "GETN"},      \
+    {PRIM(accept),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "ACCEPT"},      \
     {PRIM(flushoutput),     NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "FLUSH_OUT"}, \
     {PRIM(evaluate),        NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "EVALUATE"},  \
     {PRIM(defer),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "DEFER"},     \
