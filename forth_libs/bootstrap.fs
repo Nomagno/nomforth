@@ -94,6 +94,18 @@ DECIMAL
     SWAP !
 ;
 
+: ..TRACE_ON
+    C_FLAGS_ADR
+    DUP @ 1 2 LSHIFT OR
+    SWAP !
+;
+
+: ..TRACE_OFF
+    C_FLAGS_ADR
+    DUP @ 1 2 LSHIFT BITWISE_NOT AND
+    SWAP !
+;
+
 
 : EXIT C_T_E , ; immediate
 : EXIT_NTC C_T_E_NTC , ; immediate

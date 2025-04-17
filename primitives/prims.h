@@ -37,7 +37,9 @@ MAKEPRIM(getchar);
 MAKEPRIM(getnum);
 MAKEPRIM(accept);
 MAKEPRIM(flushoutput);
-MAKEPRIM(evaluate);
+MAKEPRIM(save_input);
+MAKEPRIM(interpret);
+MAKEPRIM(restore_input);
 
 MAKEPRIM(heap_init);
 MAKEPRIM(defrag);
@@ -151,10 +153,12 @@ MAKEPRIM(rtuck);
     {PRIM(postpone),     IMMEDIATE_WORD,  ALLOW_TCO, DISALLOW_INTERPRET, "POSTPONE"},  \
     {PRIM(getchar),         NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "GETC"},      \
     {PRIM(getnum),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "GETN"},      \
-    {PRIM(accept),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "ACCEPT"},      \
+    {PRIM(accept),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "ACCEPT"},    \
     {PRIM(flushoutput),     NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "FLUSH_OUT"}, \
-    {PRIM(evaluate),        NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "EVALUATE"},  \
     {PRIM(defer),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "DEFER"},     \
+    {PRIM(save_input),      NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "SAVE-INPUT"},\
+    {PRIM(interpret),       NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "INTERPRET"}, \
+    {PRIM(restore_input),   NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "RESTORE-INPUT"},\
                                                                                        \
     {PRIM(heap_init),       NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "HEAP_INIT"}, \
     {PRIM(defrag),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "DEFRAG"},    \

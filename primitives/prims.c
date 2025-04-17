@@ -128,22 +128,26 @@ MAKEPRIM(postpone) {
     Cell found_word = findWord(c, m, 'n', lorig, w_size);
     appendWord(c, m, CA(found_word), 1);
 }
-MAKEPRIM(evaluate){
+MAKEPRIM(save_input){
+    R_SAVE();
+    funcPush(c, m, c->inter_max-m);
+    funcPush(c, m, c->inter_min-m);
+    funcPush(c, m, c->inter_str-m);
+    R_RESTORE();
+}
+
+MAKEPRIM(restore_input){
+    R_SAVE();
+    c->inter_str = m+funcPop(c, m);
+    c->inter_min = m+funcPop(c, m);
+    c->inter_max = m+funcPop(c, m);
+    R_RESTORE();
+}
+
+// execute takes care of restoring the program counter for us
+MAKEPRIM(interpret) {
     Cell s = dataPop(c, m), adr = dataPop(c, m);
-    // Set up our own stack frame on the native stack
-    //  Evaluate is the only word that can result in a native stack overflow,
-    //  so please don't somehow use it recursively.
-    Cell *inter_max = c->inter_max;
-    Cell *inter_min = c->inter_min;
-    Cell *inter_str = c->inter_str;
-
-    Cell pc = m[c->program_counter_ptr];
     interpret(c, m, &m[adr], s, 0);
-    m[c->program_counter_ptr] = pc;
-
-    c->inter_max = inter_max;
-    c->inter_min = inter_min;
-    c->inter_str = inter_str;
 }
 
 /*Interface to Offset-based allocator in oa.h*/

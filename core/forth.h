@@ -100,10 +100,11 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 #define STRPTR 0x0005
 #define FLAGS 0x0006
 #define BASE  0x0007
+#define BLK  0x0008
 
 #define DICT_START    0x0020
-#define DSTACK_START  0x2000
-#define FSTACK_START  0x4000
+#define DSTACK_START  0x4000
+#define FSTACK_START  0x5000
 #define USERMEM_START 0x6000
 #define HEAP_START    0x8000
 #define PAD_START     0xA000

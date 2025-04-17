@@ -140,12 +140,12 @@
 ( adr -- , deletes all scratch pad entries starting from the selected address, by resetting the pad pointer)
 : RESET_PAD_TO C_PAD_ADR ! ;
 
-: "p [CHAR] " PARSE ;
+: p" [CHAR] " PARSE ;
 : COUNT ( adr -- adr+1 strsize) DUP @ 1 -   SWAP 1 +   SWAP ;
 : UNCOUNT ( adr+1 strsize -- adr) DROP 1 - ;
-: ." "p DUP COUNT TYPE RESET_PAD_TO ;
+: ." p" DUP COUNT TYPE RESET_PAD_TO ;
 : STRLIT"
-    "p LIT,
+    p" LIT,
     PPW COUNT
     PPW TYPE
 ; immediate
@@ -283,3 +283,5 @@ lspA CONSTANT lsp_start
 ( -- n, where n is 0 if an invalid character was entered, and a code 1-26 if a lowercase alphabet letter was entered)
 : GETLETTER GETC DUP DUP [CHAR] a >= SWAP [CHAR] z <= AND IF [char] a - 1 + ELSE DROP 0 THEN ;
 : GETNUMBER GETN ;
+
+: EVALUATE SAVE-INPUT INTERPRET RESTORE-INPUT ;
