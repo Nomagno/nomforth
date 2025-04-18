@@ -58,13 +58,12 @@ typedef enum {
 
 typedef struct {
     Cell dstack_ptr;
-    Cell dstack_start;
     Cell fstack_ptr;
-    Cell fstack_start;
     Cell flags_ptr;
     Cell pad_pos_ptr;
     Cell dict_pos_ptr;
     Cell heap_start;
+    Cell inbuf_start;
 
     Cell *inter_max;
     Cell *inter_min;
@@ -75,7 +74,6 @@ typedef struct {
     Cell program_counter_ptr;
 } Ctx;
 
-#define FOREIGN_NUM 64
 #define PRIM_NUM 256
 typedef void(*forthFunc)(Ctx*,Cell*);
 typedef struct {
@@ -87,7 +85,8 @@ typedef struct {
 } PrimitiveData;
 
 extern PrimitiveData primTable[PRIM_NUM];
-extern PrimitiveData foreignTable[FOREIGN_NUM];
+
+#define MEM_START(x) (Cell)(x+1)
 
 #define MUNIT 1024
 #define MEM_MAX 64*MUNIT
@@ -112,18 +111,6 @@ extern PrimitiveData foreignTable[FOREIGN_NUM];
 
 #define CA(...) (Cell[]){__VA_ARGS__}
 
-Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size);
-void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size, _Bool p, _Bool forbid_tco,
-              _Bool forbid_interpreting, Cell *data, unsigned data_size);
-Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size);
-Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size);
-
-void executePrimitive(Ctx *c, Cell *m, Cell id);
-void executeForeign(Ctx *c, Cell *m, Cell id);
-void executeComposite(Ctx *c, Cell *m, Cell w);
-void executeWord(Ctx *c, Cell *m, Cell w);
-void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent);
-
 void dataPush(Ctx *c, Cell *m, Cell v);
 Cell dataPop(Ctx *c, Cell *m);
 Cell dataPeek(Ctx *c, Cell *m);
@@ -131,10 +118,22 @@ void funcPush(Ctx *c, Cell *m, Cell v);
 Cell funcPop(Ctx *c, Cell *m);
 Cell funcPeek(Ctx *c, Cell *m);
 
+Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size);
+void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size, _Bool p, _Bool forbid_tco,
+              _Bool forbid_interpreting, Cell *data, unsigned data_size);
+Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size);
+Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size);
+
+void executePrimitive(Ctx *c, Cell *m, Cell id);
+void executeWord(Ctx *c, Cell *m, Cell w);
+int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading);
+void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent);
+
 void init(Ctx *c, Cell *m);
 void initPrimitives(Ctx *c, Cell *m);
 void printMemory(Cell *m, unsigned start, unsigned maxval, unsigned increment);
-int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading);
+
+void repl(Ctx *c, Cell *m);
 
 #define MAKEPRIM(x) void prim_##x(Ctx *c, Cell *m)
 #define PRIM(x) prim_##x

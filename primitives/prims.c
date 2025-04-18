@@ -326,36 +326,36 @@ MAKEPRIM(dotmem) {
     printMemory(m, start, end, step);
 }
 MAKEPRIM(dotstack) {
-    unsigned stacksize = m[c->dstack_ptr]-(c->dstack_start);
+    unsigned stacksize = m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));
     printf(" | s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %d", m[c->dstack_start+i]);
+        printf(" %d", m[MEM_START(c->dstack_ptr)+i]);
     }
     printf(" |");
 }
 MAKEPRIM(udotstack) {
-    unsigned stacksize = m[c->dstack_ptr]-(c->dstack_start);
+    unsigned stacksize = m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));
     printf(" | s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %u", m[c->dstack_start+i]);
+        printf(" %u", m[MEM_START(c->dstack_ptr)+i]);
     }
     printf(" |");
 }
 MAKEPRIM(dotstackret) {
     R_SAVE();
-    unsigned stacksize = m[c->fstack_ptr]-(c->fstack_start);
+    unsigned stacksize = m[c->fstack_ptr]-(MEM_START(c->fstack_ptr));
     printf(" R| s <%d>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %d", m[c->fstack_start+i]);
+        printf(" %d", m[MEM_START(c->fstack_ptr)+i]);
     }
     printf(" |");
     R_RESTORE();
 }
 MAKEPRIM(udotstackret) {
-    unsigned stacksize = m[c->fstack_ptr]-(c->fstack_start);
+    unsigned stacksize = m[c->fstack_ptr]-(MEM_START(c->fstack_ptr));
     printf(" R| s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %u", m[c->fstack_start+i]);
+        printf(" %u", m[MEM_START(c->fstack_ptr)+i]);
     }
     printf(" |");
 }

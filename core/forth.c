@@ -10,6 +10,51 @@
 static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
 static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
 
+
+void dataPush(Ctx *c, Cell *m, Cell v) {
+    m[m[c->dstack_ptr]] = v;
+    m[c->dstack_ptr] += 1;
+}
+Cell dataPop(Ctx *c, Cell *m) {
+    if (m[c->dstack_ptr] == MEM_START(c->dstack_ptr)) {
+        printf("{Data stack underflow. ABORTING}\n");
+        exit(1);
+    }
+    m[c->dstack_ptr] -= 1;
+    Cell retval = m[m[c->dstack_ptr]];
+    m[m[c->dstack_ptr]] = 0xDEADBEEF;
+    return retval;
+}
+Cell dataPeek(Ctx *c, Cell *m) {
+    if (m[c->dstack_ptr] == MEM_START(c->dstack_ptr)) {
+        printf("{Data stack underflow. ABORTING}\n");
+        exit(1);
+    }
+    return m[m[c->dstack_ptr]-1];    
+}
+void funcPush(Ctx *c, Cell *m, Cell v) {
+    m[m[c->fstack_ptr]] = v;
+    m[c->fstack_ptr] += 1;
+}
+Cell funcPop(Ctx *c, Cell *m) {
+    if (m[c->fstack_ptr] == MEM_START(c->fstack_ptr)) {
+        printf("{Function stack underflow. ABORTING}\n");
+        exit(1);
+    }
+    m[c->fstack_ptr] -= 1;
+    Cell retval = m[m[c->fstack_ptr]];
+    m[m[c->fstack_ptr]] = 0xDEADBEEF;
+    return retval;
+}
+Cell funcPeek(Ctx *c, Cell *m) {
+    if (m[c->fstack_ptr] == MEM_START(c->fstack_ptr)) {
+        printf("{Function stack underflow. ABORTING}\n");
+        exit(1);
+    }
+    return m[m[c->fstack_ptr]-1];    
+}
+
+
 Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size) {
     if (s == NULL || *s == '\0') {
         return 0;
@@ -23,7 +68,6 @@ Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size) {
     m[c->pad_pos_ptr] = str_loc + str_size;
     return str_loc;
 }
-
 void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size,
               _Bool p, _Bool forbid_tco, _Bool allow_interpret, Cell *data, unsigned data_size) {
     Cell prev_loc = m[c->dict_pos_ptr];
@@ -36,7 +80,6 @@ void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size,
     m[curr_loc+2] = (forbid_tco << 30) | (allow_interpret << 29) | (p << 28) | (data_size & 0x0000FFFF);
     for (unsigned i = 0; i < data_size; i++) m[curr_loc+3+i] = data[i];
 }
-
 Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size) {
     Cell curr_loc = m[c->dict_pos_ptr];
     unsigned size = 3+(m[curr_loc+2] & 0x0000FFFF);
@@ -48,59 +91,6 @@ Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size) {
     // stack during the compilation process
     return (curr_loc + (size-1) + data_size);
 }
-
-void dataPush(Ctx *c, Cell *m, Cell v) {
-    m[m[c->dstack_ptr]] = v;
-    m[c->dstack_ptr] += 1;
-}
-
-Cell dataPop(Ctx *c, Cell *m) {
-    if (m[c->dstack_ptr] == c->dstack_start) {
-        printf("{Data stack underflow. ABORTING}\n");
-        exit(1);
-    }
-
-    m[c->dstack_ptr] -= 1;
-    Cell retval = m[m[c->dstack_ptr]];
-    m[m[c->dstack_ptr]] = 0xDEADBEEF;
-    return retval;
-}
-
-Cell dataPeek(Ctx *c, Cell *m) {
-    if (m[c->dstack_ptr] == c->dstack_start) {
-        printf("{Data stack underflow. ABORTING}\n");
-        exit(1);
-    }
-
-    return m[m[c->dstack_ptr]-1];    
-}
-
-void funcPush(Ctx *c, Cell *m, Cell v) {
-    m[m[c->fstack_ptr]] = v;
-    m[c->fstack_ptr] += 1;
-}
-
-Cell funcPop(Ctx *c, Cell *m) {
-    if (m[c->fstack_ptr] == c->fstack_start) {
-        printf("{Function stack underflow. ABORTING}\n");
-        exit(1);
-    }
-
-    m[c->fstack_ptr] -= 1;
-    Cell retval = m[m[c->fstack_ptr]];
-    m[m[c->fstack_ptr]] = 0xDEADBEEF;
-    return retval;
-}
-
-Cell funcPeek(Ctx *c, Cell *m) {
-    if (m[c->fstack_ptr] == c->fstack_start) {
-        printf("{Function stack underflow. ABORTING}\n");
-        exit(1);
-    }
-
-    return m[m[c->fstack_ptr]-1];    
-}
-
 Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size) {
     //native name
     if (strtype == 'n') {
@@ -156,14 +146,11 @@ Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size) {
     }
 }
 
+
 void executePrimitive(Ctx *c, Cell *m, Cell id) {
-    primTable[id].func(c, m);
+    if (primTable[id].func == NULL) printf("{WARNING: Undefined primitive 0x%X}\n", id);
+    else primTable[id].func(c, m);
 }
-
-void executeForeign(Ctx *c, Cell *m, Cell id) {
-    foreignTable[id].func(c, m);
-}
-
 void executeWord(Ctx *c, Cell *m, Cell w) { 
     m[c->program_counter_ptr] = w+3;
 
@@ -256,12 +243,11 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             if (m[contents] != t_execute) new_w = m[contents]; 
             contents = new_w+3;
             m[c->program_counter_ptr] = contents;
-            if (!silent && trace) printf("{TRACE: jumping to function %u}\n", contents);
+            if (!silent && trace) printf("{TRACE: jumping to function 0x%X}\n", contents);
             break;
         }
     }
 }
-
 int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading) {
     if (skip_leading) { while (**s == target) *s += 1; }
     else { if (**s == ' ') *s += 1; }
@@ -275,7 +261,6 @@ int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leadin
     if (now > max) return -(now-orig);
     else return (now-orig);
 }
-
 void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
     _Bool l_c = 1;
     _Bool was_there_error = 0;
@@ -355,17 +340,16 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
 }
 
 void init(Ctx *c, Cell *m) {
-    c->base_ptr = 7;
+    c->base_ptr = BASE;
     c->compile_state_ptr = CS;
     c->program_counter_ptr = PC;
-    c->dstack_start = DSTACK_START;
-    c->fstack_start = FSTACK_START;
     c->dstack_ptr = DSTACK_START-1;
     c->fstack_ptr = FSTACK_START-1;
     c->flags_ptr = FLAGS;
     c->dict_pos_ptr = DICT_START-1;
     c->pad_pos_ptr = PAD_START-1;
     c->heap_start = HEAP_START;
+    c->inbuf_start = INBUF_START;
 
     m[c->base_ptr] = 10;
     m[c->compile_state_ptr] = 0;
@@ -378,22 +362,6 @@ void init(Ctx *c, Cell *m) {
 
     initPrimitives(c, m);
 }
-
-void printMemory(Cell *m, unsigned start, unsigned maxval, unsigned increment) {
-    for(unsigned i = start; i < maxval; i += increment) {
-        printf("0x%4X:", i);
-        for (unsigned j = i; j < i+increment; j++) {
-            if (m[j] != 0) {
-                printf(" \033[30;41m%08X\033[0m", m[j]);
-            } else {
-                 printf(" %08X", m[j]);
-            }
-        }
-        printf("\n");
-    }
-}
-
-
 void initPrimitives(Ctx *c, Cell *m) {
     for (unsigned i = 0; i < PRIM_NUM; i++)
     {
@@ -401,44 +369,53 @@ void initPrimitives(Ctx *c, Cell *m) {
         else {
             unsigned name_size = char_strlen(primTable[i].name);
             Cell tmpnatstring[name_size];
-            for (unsigned j = 0; j < name_size; j++)
-                tmpnatstring[j] = primTable[i].name[j];
-            makeWord(c, m, tmpnatstring, name_size, primTable[i].priority, primTable[i].forbid_tco, primTable[i].allow_interpret, CA(t_primitive, i, t_end), 3);
+            for (unsigned j = 0; j < name_size; j++) tmpnatstring[j] = primTable[i].name[j];
+            makeWord(c, m, tmpnatstring, name_size, primTable[i].priority,
+                      primTable[i].forbid_tco, primTable[i].allow_interpret,
+                      CA(t_primitive, i, t_end), 3);
         }
     }
 }
+void printMemory(Cell *m, unsigned start, unsigned maxval, unsigned increment) {
+    for(unsigned i = start; i < maxval; i += increment) {
+        printf("0x%4X:", i);
+        for (unsigned j = i; j < i+increment; j++) {
+            // Colour non-zero cells
+            if (m[j] != 0) printf(" \033[30;41m%08X\033[0m", m[j]);
+            else           printf(           " %08X",        m[j]);
+        }
+        printf("\n");
+    }
+}
 
-PrimitiveData foreignTable[FOREIGN_NUM] = { };
-
-Cell memory[MEM_MAX];
-int main(void) {
-    Ctx myContext;
-    init(&myContext, memory);
-
+void repl(Ctx *c, Cell *m) {
     char line[1024];
-
-    printf("Welcome to nomForth!\n"
-           "To exit, type \'quit\'.\n");
 
     _Bool silent = 0;
     _Bool quit = 0;
     while(1) {
-        silent = memory[myContext.flags_ptr] >> 1 & 1;
-        quit = memory[myContext.flags_ptr] >> 0 & 1;
-        if (quit) {
-            printf("\nThanks for using nomForth.\n");
-            break;
-        }
+        silent = m[c->flags_ptr] >> 1 & 1;
+        quit = m[c->flags_ptr] >> 0 & 1;
+        if (quit) return;
 
         fgets(line, sizeof(line), stdin);
-        unsigned linesize = char_strlen(line)-1; /*Exclude terminating newline*/
+        unsigned lsize = char_strlen(line)-1; /*Exclude terminating newline*/
         if (char_strlen(line) > 1) {
-            for (unsigned i = 0; i < linesize; i++)
-                memory[INBUF_START+i] = line[i];
-            memory[INBUF_START+linesize] = '\0';
-            if (!silent)
-                printf("OUTPUT:");
-            interpret(&myContext, memory, &memory[INBUF_START], linesize, silent);
+            for (unsigned i = 0; i < lsize; i++) m[c->inbuf_start+i] = line[i];
+            m[c->inbuf_start+lsize] = '\0';
+            if (!silent) printf("OUTPUT:");
+            interpret(c, m, &m[c->inbuf_start], lsize, silent);
         }
-    }
+    }    
 }
+
+#ifndef NOMFORTH_LIB
+Cell memory[MEM_MAX];
+Ctx  context;
+int main(void) {
+    init(&context, memory);
+    printf("Welcome to nomForth!\nTo exit, type QUIT.\n");
+    repl(&context, memory);
+    printf("\nThanks for using nomForth.\n");
+}
+#endif
