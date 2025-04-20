@@ -5,6 +5,10 @@
 
 /*Offset-based allocator (can be used with custom heaps)*/
 
+#define SIZE(x) H[x]
+#define NEXT(x) H[x+1]
+#define USED(x) (NEXT(x) == USED_MARK)
+
 wptr *H;
 wptr H_L;
 const wptr F = 0;

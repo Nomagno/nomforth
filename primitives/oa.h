@@ -1,3 +1,5 @@
+#ifndef _OA_H
+#define _OA_H
 #include <stdint.h>
 /* Copyright 2025 nomagno*/
 /* CC0 License */
@@ -9,10 +11,6 @@
 typedef uint32_t wptr;
 #define NIL UINT32_MAX
 #define USED_MARK UINT32_MAX-1
-
-#define SIZE(x) H[x]
-#define NEXT(x) H[x+1]
-#define USED(x) (NEXT(x) == USED_MARK)
 
 extern wptr *H; /* BEHOLD: THE HEAP! */
 extern wptr H_L; /* Last offset of the heap */
@@ -27,3 +25,4 @@ void OA_defrag();
 /*Internal functions:*/
 wptr OA_split(wptr n, unsigned s);
 wptr OA_raw_alloc(unsigned s);
+#endif
