@@ -291,3 +291,12 @@ lspA CONSTANT lsp_start
 : GETNUMBER GETN ;
 
 : EVALUATE SAVE-INPUT INTERPRET RESTORE-INPUT ;
+
+: WORDS
+    DP @
+    BEGIN
+        DUP 1 + @
+        DUP 0 != IF COUNT TYPE BL EMIT THEN
+        @
+    DUP 0 = UNTIL
+;
