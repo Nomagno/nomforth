@@ -5,6 +5,8 @@
 ( Makes nomforth usable by adding everything from looping constructs )
 ( to anonymous functions to case statements to words with local variables )
 
+: <> != ;
+
 : CELLS ;
 : CELL 1 ;
 : CELL+ 1 + ;
@@ -53,6 +55,7 @@
     PPW 2DROP ( WE DROP FROM THE RETURN STACK BECAUSE IF WE )
               ( DID NOT LOOP, THE 2>R WAS NOT EXECUTED YET )
 ; immediate
+: UNLOOP  PPW 2R>  PPW 2DROP ; immediate
 : I r> r> DUP >r SWAP >r ; forbid_tco
 : +I r> SWAP r> + >r >r ; forbid_tco
 
@@ -160,6 +163,9 @@
     LOOP
     2DROP
 ;
+: CMOVE MOVE ;
+: ALIGN ;
+
 : /STRING ( str n u -- str+u n-u )
     DUP -ROT - ( str u newsize)
     -ROT ( newsize str u)
