@@ -196,7 +196,7 @@ DECIMAL
 
 : STATE C_STATE_ADR ;
 : [ C_STATE_ADR 0 SWAP ! ; immediate
-: ] C_STATE_ADR 1 SWAP ! ;
+: ] C_STATE_ADR -1 SWAP ! ;
 
 : ' ( "name" -- xt ) BL WORD FIND 
     DUP 0 = IF ( if the word doesn't exist, return 0)

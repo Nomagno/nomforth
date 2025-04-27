@@ -300,3 +300,21 @@ lspA CONSTANT lsp_start
         @
     DUP 0 = UNTIL
 ;
+
+: ABORT ( string flag -- )
+    IF
+      STRLIT" EXCEPTION: "
+      COUNT TYPE
+      QUIT
+    ELSE
+      DROP
+    THEN
+;
+            
+
+: ABORT" ( flag -- )
+    POSTPONE p"
+    POSTPONE LITERAL
+    PPW SWAP
+    PPW ABORT
+; immediate

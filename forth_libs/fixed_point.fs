@@ -11,35 +11,23 @@ VARIABLE FP_EXP
 : DIV / ;
 
 : POW ( b e -- b^e )
-    DUP 0 <
-    IF STRLIT" ERR: NEG EXP" CR BYE THEN
-
-    2DUP 0 = SWAP 0 =
-    AND IF STRLIT" ERR: 0^0" CR BYE THEN
-
-    1 SWAP
-    0 ?DO ( b b^i)
-      SWAP DUP ROT * ( b b^[i+1])
-    LOOP
-    SWAP DROP
+    DUP 0 < ABORT" FixP: NEG EXP"
+    2DUP OR 0 = ABORT" FixP: 0^0"
+    1 SWAP 0 ?DO  OVER *  LOOP NIP
 ;
+
+: NEGPOW ARITHMETICAL_NOT POW ;
 
 : *
     MUL FP_BASE @
-    FP_EXP @ DUP 0 < IF
-      ARITHMETICAL_NOT POW DIV
-    ELSE
-      POW MUL
-    THEN
+    FP_EXP @ DUP 0 <
+    IF  NEGPOW DIV  ELSE  POW MUL  THEN
 ;
 
 : /
     DIV FP_BASE @
-    FP_EXP @ DUP 0 < IF
-      ARITHMETICAL_NOT POW MUL
-    ELSE
-      POW DIV
-    THEN
+    FP_EXP @ DUP 0 <
+    IF  NEGPOW MUL  ELSE  POW DIV  THEN
 ;
 
 : FIX> 1 1 / DIV ;
