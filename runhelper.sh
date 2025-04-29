@@ -11,4 +11,4 @@ printf "\n..verbose\n" > $verbose_mode
 cat $@
 echo Prepending the files: $@
 echo _______________________
-cat $silent_mode $@ $verbose_mode /dev/stdin | ./fex;
+cat $silent_mode $@ $verbose_mode /dev/stdin | $NOMPATH./fex;
