@@ -5,14 +5,28 @@
 ( Makes nomforth usable by adding everything from looping constructs )
 ( to anonymous functions to case statements to words with local variables )
 
+\ This whole prelude exists for gforth compatibility only
 : <> != ;
+: 2/ 2 / ;
+: 1+ 1 + ;
+: 1- 1 - ;
+: 0= 0 = ;
+: c! ! ;
+: c@ @ ;
+: invert bitwise_not ;
+: r@ r>  rdup r>  swap >r ; forbid_tco
+: char+ 1 + ;
+: u< < ;
+: invert BITWISE_NOT ;
+: negate ARITHMETICAL_NOT ;
 
 : CELLS ;
 : CELL 1 ;
 : CELL+ 1 + ;
-: -ROT ROT ROT ;
 : NOOP ;
 : COMPILE, , ;
+
+: -ROT ROT ROT ;
 
 : PICK ( x0 i*x u.i -- x0 i*x x0 )
   dup 0 = if drop dup exit then  swap >r 1 - recurse r> swap
@@ -41,12 +55,25 @@
     PPW 2>R
 ; immediate
 : DO ( -- dest / D: l i -- , R: -- l i )
+    1 LIT,
+    POSTPONE IF
     POSTPONE BEGIN
     PPW 2>R
 ; immediate
 : LOOP
     PPW 2R>
     1 LIT,
+    PPW +
+    PPW 2DUP
+    PPW <=
+    POSTPONE UNTIL
+    POSTPONE THEN
+    PPW 2DROP ( WE DROP FROM THE RETURN STACK BECAUSE IF WE )
+              ( DID NOT LOOP, THE 2>R WAS NOT EXECUTED YET )
+; immediate
+: +LOOP
+    PPW 2R>
+    PPW ROT
     PPW +
     PPW 2DUP
     PPW <=
@@ -111,6 +138,10 @@
     POSTPONE THEN        ( resolve forward branch from orig )
 ; immediate
 
+: TRUE -1 ;
+: FALSE 0 ;
+: BOOL_NORM LOGICAL_NOT LOGICAL_NOT ;
+
 ( Variable words)
 : ISVAR ( xt -- is_it_a_properly_declared_variable) 2 + @ 28 rshift 8 and ;
 : VARIABLE ( "name" --  ) CREATE 0 , ;
@@ -132,6 +163,27 @@
     SWAP !      ( set len )
 ;
 
+: tri_less ( x y z -- z < x && z < y )
+    dup rot < -rot swap < and ;
+
+: d+ swap 2swap swap 2swap rot swap 2dup + dup >R tri_less LOGICAL_NOT R> + + swap ;
+: d- swap 2swap swap 2swap rot swap - dup 0 < arithmetical_not ( if 0 : -1, if -1: 0 ) swap >R + - R> swap ;
+: d> rot swap 2dup 2>R
+    <= IF 2R>
+        < IF 2DROP 0
+        ELSE > THEN
+    ELSE 2DROP -1 THEN
+;
+
+: d< rot swap 2dup 2>R
+    >= IF 2R>
+        > IF 2DROP 0
+        ELSE < THEN
+    ELSE 2DROP -1 THEN
+;
+
+: d= rot = -rot = and ;
+
 ( String/array handling words)
 
 : NEWSTR ( -- adr)
@@ -152,6 +204,7 @@
     PPW COUNT
     PPW TYPE
 ; immediate
+: FILL ( c-char u char -- ) ROT ROT 0 ?DO 2DUP ! 1 + LOOP 2DROP ;
 : MOVE ( addr1 addr2 u -- )
     ( copies u cells starting from address 1 intro address 2)
     0 ?DO

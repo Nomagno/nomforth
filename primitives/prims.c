@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include "prims.h"
 
 #define D_SAVE() Cell saved_d = dataPop(c, m)
@@ -298,6 +299,13 @@ MAKEPRIM(accept){
 MAKEPRIM(flushoutput){
     fflush(stdout);
 }
+MAKEPRIM(utime){
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    uint64_t t = 1000000 * tv.tv_sec + tv.tv_usec;
+    dataPush(c, m, t & 0xFFFFFFFF);
+    dataPush(c, m, t >> 32);
+}
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c, m);
     if (ch >= 0x20 && ch <= 0x7E) printf("%c", ch);
@@ -319,6 +327,7 @@ MAKEPRIM(spaces) {
     }
 }
 MAKEPRIM(dot) { printf(" %d", dataPop(c, m)); }
+MAKEPRIM(ddot) { printf(" %ld", ((int64_t)dataPop(c, m) << 32) + (uint32_t)dataPop(c, m)); }
 MAKEPRIM(udot) { printf(" %u", dataPop(c, m)); }
 MAKEPRIM(xdot) { printf(" %08X", dataPop(c, m)); }
 MAKEPRIM(dotmem) {
@@ -358,4 +367,11 @@ MAKEPRIM(udotstackret) {
         printf(" %u", m[MEM_START(c->fstack_ptr)+i]);
     }
     printf(" |");
+}
+
+MAKEPRIM(ummod) {
+    uint64_t a = dataPop(c, m);
+    uint64_t b = (uint64_t)((uint64_t)dataPop(c, m) << 32) + (uint64_t)dataPop(c, m);
+    dataPush(c, m, b % a);
+    dataPush(c, m, b / a);
 }

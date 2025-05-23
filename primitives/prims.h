@@ -70,11 +70,13 @@ MAKEPRIM(leq);
 MAKEPRIM(gr);
 MAKEPRIM(geq);
 
+MAKEPRIM(utime);
 MAKEPRIM(emit);
 MAKEPRIM(type);
 MAKEPRIM(cr);
 MAKEPRIM(spaces);
 MAKEPRIM(dot);
+MAKEPRIM(ddot);
 MAKEPRIM(udot);
 MAKEPRIM(xdot);
 MAKEPRIM(dotmem);
@@ -82,6 +84,8 @@ MAKEPRIM(dotstack);
 MAKEPRIM(udotstack);
 MAKEPRIM(dotstackret);
 MAKEPRIM(udotstackret);
+
+MAKEPRIM(ummod);
 
 MAKEPRIM(drop);
 MAKEPRIM(nip);
@@ -188,11 +192,13 @@ MAKEPRIM(rtuck);
     {PRIM(gr),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ">"},         \
     {PRIM(geq),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ">="},        \
                                                                                        \
+    {PRIM(utime),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "UTIME"},     \
     {PRIM(emit),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "EMIT"},      \
     {PRIM(type),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "TYPE"},      \
     {PRIM(cr),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "CR"},        \
     {PRIM(spaces),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "SPACES"},    \
     {PRIM(dot),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "."},         \
+    {PRIM(ddot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "D."},        \
     {PRIM(udot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "U."},        \
     {PRIM(xdot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "X."},        \
     {PRIM(dotmem),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "M."},        \
@@ -200,6 +206,8 @@ MAKEPRIM(rtuck);
     {PRIM(udotstack),       NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "U.S"},       \
     {PRIM(dotstackret),     NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "R.S"},       \
     {PRIM(udotstackret),    NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "UR.S"},      \
+                                                                                       \
+    {PRIM(ummod),           NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "UM/MOD"},    \
                                                                                        \
     {PRIM(drop),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "DROP"},      \
     {PRIM(nip),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "NIP"},       \

@@ -89,7 +89,7 @@ extern PrimitiveData primTable[PRIM_NUM];
 #define MEM_START(x) (Cell)(x+1)
 
 #define MUNIT 1024
-#define MEM_MAX 64*MUNIT
+#define MEM_MAX 128*MUNIT
 
 #define NILPTR 0x0000
 #define PC 0x0001
@@ -102,12 +102,12 @@ extern PrimitiveData primTable[PRIM_NUM];
 #define BLK  0x0008
 
 #define DICT_START    0x0020
-#define DSTACK_START  0x4000
-#define FSTACK_START  0x5000
-#define USERMEM_START 0x6000
-#define HEAP_START    0x8000
-#define PAD_START     0xA000
-#define INBUF_START   0xF000
+#define DSTACK_START  0x14000
+#define FSTACK_START  0x15000
+#define USERMEM_START 0x16000
+#define HEAP_START    0x18000
+#define PAD_START     0x1A000
+#define INBUF_START   0x1F000
 
 #define CA(...) (Cell[]){__VA_ARGS__}
 

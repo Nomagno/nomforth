@@ -61,9 +61,12 @@
 : C_FLAGS_ADR 6 LIT, ; immediate
 : C_BASE_ADR 7 LIT, ; immediate
 
+
 : DECIMAL 10 C_BASE_ADR ! ;
 : HEX 16 C_BASE_ADR ! ;
 : OCTAL 16 C_BASE_ADR ! ;
+: DEC DECIMAL ;
+: BASE C_BASE_ADR ;
 
 ( When altering this, make sure to also alter the definition of DICT_CURRENT)
 : C_DICT_ADR 31 LIT, ; immediate
@@ -71,7 +74,7 @@
 
 HEX
 : C_PAD_ADR 9FFF LIT, ; immediate
-: USERMEM 6000 ;
+: USERMEM 16000 ;
 DECIMAL
 
 : QUIT BYE ;
@@ -186,12 +189,12 @@ DECIMAL
 ;
 
 : >BODY ( xt -- body_start_addr)
-    DUP >SIZE >= 0 IF ( If "standard" size is negative it's definitely not a regular variable)
+    DUP >SIZE 0 >= IF ( If "standard" size is negative it's definitely not a regular variable)
         7 +
+        EXIT
     THEN
-    DUP >SIZE < 0 IF ( Makes no sense to call >BODY on such a word, return 0 as invalid )
-        DROP 0
-    THEN
+    ( Else: Makes no sense to call >BODY on such a word, return 0 as invalid )
+    DROP 0
 ;
 
 : STATE C_STATE_ADR ;
