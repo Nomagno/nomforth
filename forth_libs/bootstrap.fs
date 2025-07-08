@@ -73,7 +73,7 @@
 : DP C_DICT_ADR ;
 
 HEX
-: C_PAD_ADR 9FFF LIT, ; immediate
+: C_PAD_ADR 1A000 LIT, ; immediate
 : USERMEM 16000 ;
 DECIMAL
 
