@@ -1,5 +1,6 @@
+export N=$NFPATH
 gcc -o fex -g \
-        core/forth.c \
-        primitives/prims.c \
-        primitives/oa.c \
-&& sh runhelper.sh forth_libs/bootstrap.fs forth_libs/utilities.fs $@
+        $N/core/forth.c \
+        $N/primitives/prims.c \
+        $N/primitives/oa.c \
+&& sh $N/runhelper.sh $N/forth_libs/bootstrap.fs $N/forth_libs/utilities.fs $@
