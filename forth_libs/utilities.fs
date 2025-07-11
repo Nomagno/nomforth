@@ -204,6 +204,9 @@
     PPW COUNT
     PPW TYPE
 ; immediate
+: sp"
+    p" LIT,
+; immediate
 : FILL ( c-char u char -- ) ROT ROT 0 ?DO 2DUP ! 1 + LOOP 2DROP ;
 : MOVE ( addr1 addr2 u -- )
     ( copies u cells starting from address 1 intro address 2)
@@ -332,7 +335,26 @@ lspA CONSTANT lsp_start
     PPW lsp->
     ( substract 1 because the convention dictates the callee will increment it)
     ['] <-lsp >CODE 1 - LIT,
-    PPW >r
+    PPW >r ( append continuation to return stack)
+;
+
+( word takes 1 parameter into A)
+: ::1 :: PPW >a ;
+
+( word takes 2 parameters into A B )
+: ::2
+      ::
+      PPW >b
+      PPW >a
+;
+
+
+( word takes 3 parameters into A B C)
+: ::3
+      ::
+      PPW >c
+      PPW >b
+      PPW >a
 ;
 
 ( example usage that prints 2 1:)
