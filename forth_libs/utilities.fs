@@ -198,7 +198,7 @@
 : p" [CHAR] " PARSE ;
 : COUNT ( adr -- adr+1 strsize) DUP @ 1 -   SWAP 1 +   SWAP ;
 : UNCOUNT ( adr+1 strsize -- adr) DROP 1 - ;
-: ." p" DUP COUNT TYPE RESET_PAD_TO ;
+: ." p" DUP COUNT TYPE ;
 : STRLIT"
     p" LIT,
     PPW COUNT
