@@ -1,8 +1,7 @@
-VARIABLE FP_BASE    VARIABLE FP_EXP
-: FP_INF ( -- b e ) FP_BASE @ FP_EXP @ ;
-: NORMAL 10 FP_BASE !   0 FP_EXP ! ;
-: MONEY  10 FP_BASE !  -2 FP_EXP ! ;
-: KILO   10 FP_BASE !   3 FP_EXP ! ;
+: FP_INF ( -- b e ) BASE @ EXP @ ;
+: NORMAL 10 BASE !   0 EXP ! ;
+: MONEY  10 BASE !  -2 EXP ! ;
+: KILO   10 BASE !   3 EXP ! ;
 NORMAL
 : MUL * ;  : DIV / ;  : NEG ARITHMETICAL_NOT ;
 : POW ( b e -- b^e )

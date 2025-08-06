@@ -60,6 +60,7 @@
 : C_STRPTR_ADR 5 LIT, ; immediate
 : C_FLAGS_ADR 6 LIT, ; immediate
 : C_BASE_ADR 7 LIT, ; immediate
+: C_EXP_ADR 8 LIT, ; immediate
 
 
 : DECIMAL 10 C_BASE_ADR ! ;
@@ -67,6 +68,7 @@
 : OCTAL 16 C_BASE_ADR ! ;
 : DEC DECIMAL ;
 : BASE C_BASE_ADR ;
+: EXP C_EXP_ADR ;
 
 ( When altering this, make sure to also alter the definition of DICT_CURRENT)
 : C_DICT_ADR 31 LIT, ; immediate

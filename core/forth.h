@@ -70,6 +70,7 @@ typedef struct {
     Cell *inter_str;
 
     Cell base_ptr;
+    Cell exp_ptr;
     Cell compile_state_ptr;
     Cell program_counter_ptr;
 } Ctx;
@@ -99,7 +100,7 @@ extern PrimitiveData primTable[PRIM_NUM];
 #define STRPTR 0x0005
 #define FLAGS 0x0006
 #define BASE  0x0007
-#define BLK  0x0008
+#define EXP  0x0008
 
 #define DICT_START    0x0020
 #define DSTACK_START  0x14000

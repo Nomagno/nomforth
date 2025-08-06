@@ -147,6 +147,32 @@ Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size) {
 }
 
 
+static int findChar(char x, char *str) {
+    for (unsigned i = 0; str[i] != '\0'; i++) {
+        if (str[i] == x) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int delChar(char x, char *str) {
+    unsigned count = 0;
+    int pos = 0;
+    while (findChar(x, str) != -1) {
+        pos = findChar(x, str);
+        count += 1;
+        unsigned i;
+        for (i = pos; str[i+1] != '\0'; i++) {
+            str[i] = str[i+1];
+        }
+        str[i] = '\0';
+    }
+    if (count > 0) return pos;
+    else if (count == 0) return -1;
+    else return (-pos-1);
+}
+
 void executePrimitive(Ctx *c, Cell *m, Cell id) {
     if (primTable[id].func == NULL) printf("{WARNING: Undefined primitive 0x%X}\n", id);
     else primTable[id].func(c, m);
@@ -308,13 +334,26 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
                 tmpstring[i] = lorig[i];
             }
             tmpstring[w_size] = '\0';
+            int pos = delChar('.', tmpstring);
+            _Bool valid_dot = (w_size-1);
+            if (pos > 0) { //one dot
+                if ((int)m[EXP] < 0)
+                    valid_dot = (w_size-1)-pos == -(int)m[EXP];
+                else
+                    valid_dot = 0;
+                w_size -= 1;
+            } else if (pos == -1) { // no dots, fine
+                valid_dot = (int)m[EXP] >= 0;
+            } else { //multiple dots, nonsense
+                valid_dot = 0;
+            }
 
             Cell val = strtol(tmpstring, &endptr, m[c->base_ptr]);
             int converted_num_size = endptr-tmpstring;
 
             if (l_c != 0) *c->inter_str = ' ';
 
-            if (converted_num_size == w_size) {
+            if (valid_dot && converted_num_size == w_size) {
                 if (m[c->compile_state_ptr] == 0)
                     dataPush(c, m, val);
                 else {
@@ -327,8 +366,11 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
                     PRIM(comma)(c, m);
                 }
             } else {
-                printf("{ERROR: unknown word ");
-                for (int i = 0; i < w_size; i++)
+                if (valid_dot)
+                    printf("{ERROR: unknown word ");
+                else
+                    printf("{ERROR: bad size after fixed point ");
+                for (int i = 0; i < w_size + (pos > 0); i++)
                     printf("%c", lorig[i]);
                 printf("}\n");
                 l_c = 0;
@@ -341,6 +383,7 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
 
 void init(Ctx *c, Cell *m) {
     c->base_ptr = BASE;
+    c->exp_ptr = EXP;
     c->compile_state_ptr = CS;
     c->program_counter_ptr = PC;
     c->dstack_ptr = DSTACK_START-1;
@@ -352,6 +395,7 @@ void init(Ctx *c, Cell *m) {
     c->inbuf_start = INBUF_START;
 
     m[c->base_ptr] = 10;
+    m[c->exp_ptr] = 0;
     m[c->compile_state_ptr] = 0;
     m[c->program_counter_ptr] = 0;
     m[c->dstack_ptr] = DSTACK_START;
