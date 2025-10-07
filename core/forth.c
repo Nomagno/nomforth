@@ -10,61 +10,23 @@
 static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
 static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
 
+#define SCHECK(__var, __message) if (m[__var] == MEM_START(__var)) { printf("{%s stack underflow. ABORTING", __message); exit(1); }
 
-void dataPush(Ctx *c, Cell *m, Cell v) {
-    m[m[c->dstack_ptr]] = v;
-    m[c->dstack_ptr] += 1;
-}
-Cell dataPop(Ctx *c, Cell *m) {
-    if (m[c->dstack_ptr] == MEM_START(c->dstack_ptr)) {
-        printf("{Data stack underflow. ABORTING}\n");
-        exit(1);
-    }
-    m[c->dstack_ptr] -= 1;
-    Cell retval = m[m[c->dstack_ptr]];
-    m[m[c->dstack_ptr]] = 0xDEADBEEF;
-    return retval;
-}
-Cell dataPeek(Ctx *c, Cell *m) {
-    if (m[c->dstack_ptr] == MEM_START(c->dstack_ptr)) {
-        printf("{Data stack underflow. ABORTING}\n");
-        exit(1);
-    }
-    return m[m[c->dstack_ptr]-1];    
-}
-void funcPush(Ctx *c, Cell *m, Cell v) {
-    m[m[c->fstack_ptr]] = v;
-    m[c->fstack_ptr] += 1;
-}
-Cell funcPop(Ctx *c, Cell *m) {
-    if (m[c->fstack_ptr] == MEM_START(c->fstack_ptr)) {
-        printf("{Function stack underflow. ABORTING}\n");
-        exit(1);
-    }
-    m[c->fstack_ptr] -= 1;
-    Cell retval = m[m[c->fstack_ptr]];
-    m[m[c->fstack_ptr]] = 0xDEADBEEF;
-    return retval;
-}
-Cell funcPeek(Ctx *c, Cell *m) {
-    if (m[c->fstack_ptr] == MEM_START(c->fstack_ptr)) {
-        printf("{Function stack underflow. ABORTING}\n");
-        exit(1);
-    }
-    return m[m[c->fstack_ptr]-1];    
-}
-
+void dataPush(Ctx *c, Cell *m, Cell v) { m[m[c->dstack_ptr]] = v;  m[c->dstack_ptr] += 1; }
+void funcPush(Ctx *c, Cell *m, Cell v) { m[m[c->fstack_ptr]] = v;  m[c->fstack_ptr] += 1; }
+Cell dataPop(Ctx *c, Cell *m)  { SCHECK(c->dstack_ptr, "Data");    m[c->dstack_ptr] -= 1;  return m[m[c->dstack_ptr]]; }
+Cell funcPop(Ctx *c, Cell *m)  { SCHECK(c->fstack_ptr, "Return");  m[c->fstack_ptr] -= 1;  return m[m[c->fstack_ptr]]; }
+Cell dataPeek(Ctx *c, Cell *m) { SCHECK(c->dstack_ptr, "Data");                            return m[m[c->dstack_ptr]-1]; }
+Cell funcPeek(Ctx *c, Cell *m) { SCHECK(c->fstack_ptr, "Return");                          return m[m[c->fstack_ptr]-1]; }
 
 Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size) {
-    if (s == NULL || *s == '\0') {
+    if (s == NULL || *s == '\0')
         return 0;
-    }
     Cell str_loc = m[c->pad_pos_ptr];
     Cell str_size = name_size+1;
     m[str_loc]=str_size;
-    for (unsigned i = 0; i < str_size-1; i++){
+    for (unsigned i = 0; i < str_size-1; i++)
         m[str_loc+1+i]=s[i];
-    }
     m[c->pad_pos_ptr] = str_loc + str_size;
     return str_loc;
 }
@@ -78,12 +40,14 @@ void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size,
     m[curr_loc] = prev_loc;
     m[curr_loc+1] = addToPad(c, m, name, name_size);
     m[curr_loc+2] = (forbid_tco << 30) | (allow_interpret << 29) | (p << 28) | (data_size & 0x0000FFFF);
-    for (unsigned i = 0; i < data_size; i++) m[curr_loc+3+i] = data[i];
+    for (unsigned i = 0; i < data_size; i++)
+        m[curr_loc+3+i] = data[i];
 }
 Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size) {
     Cell curr_loc = m[c->dict_pos_ptr];
     unsigned size = 3+(m[curr_loc+2] & 0x0000FFFF);
-    for (unsigned i = 0; i < data_size; i++) m[curr_loc+size+i] = data[i];
+    for (unsigned i = 0; i < data_size; i++)
+        m[curr_loc+size+i] = data[i];
     m[curr_loc+2] += data_size;
 
     // Pointer to the last written byte of data,
@@ -91,68 +55,42 @@ Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size) {
     // stack during the compilation process
     return (curr_loc + (size-1) + data_size);
 }
+
+// Just to avoid pasting the same code twice
+#define INSTANCE_FIND_WORD(__x, __y) \
+__x *n = (__x *)s;\
+Cell n_s = s_size;\
+if (n_s == 0) return 0;\
+_Bool condition = 1;\
+Cell idx = m[c->dict_pos_ptr];\
+while (condition) {\
+    Cell temp_loc = m[idx+1];\
+    Cell temp_s = m[temp_loc] - 1;\
+    unsigned i;\
+    _Bool are_equal = 1;\
+    if (n_s != temp_s) are_equal = 0;\
+    for (i = 0; i < n_s && are_equal; i++) {\
+        if (toupper(m[temp_loc+1+i]) != toupper((__x)n[i])) are_equal = 0;\
+    }\
+    if (are_equal && (i == n_s)) condition = 0;\
+    else {\
+        if (m[idx] == 0) return 0;\
+        else idx = m[idx];\
+    }\
+}\
+return idx;
+
+
 Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size) {
-    //native name
-    if (strtype == 'n') {
-        Cell *n = (Cell *)s;
-        Cell n_s = s_size;
-        if (n_s == 0) return 0;
-
-        _Bool condition = 1;
-        Cell idx = m[c->dict_pos_ptr];
-        while (condition) {
-            Cell temp_loc = m[idx+1];
-            Cell temp_s = m[temp_loc] - 1;
-
-            unsigned i;
-            _Bool are_equal = 1;
-            if (n_s != temp_s) are_equal = 0;
-            for (i = 0; i < n_s && are_equal; i++) {
-                if (toupper(m[temp_loc+1+i]) != toupper(n[i])) are_equal = 0;
-            }
-            if (are_equal && (i == n_s)) condition = 0;
-            else {
-                if (m[idx] == 0) return 0;
-                else idx = m[idx];
-            }
-        }
-        return idx;
-    } else if (strtype == 'c') {
-        char *n = (char *)s;
-        Cell n_s = s_size;
-        if (n_s == 0) return 0;
-
-        _Bool condition = 1;
-        Cell idx = m[c->dict_pos_ptr];
-        while (condition) {
-            Cell temp_loc = m[idx+1];
-            Cell temp_s = m[temp_loc] - 1;
-
-            unsigned i;
-            _Bool are_equal = 1;
-            if (n_s != temp_s) are_equal = 0;
-            for (i = 0; i < n_s && are_equal; i++) {
-                if (toupper(m[temp_loc+1+i]) != toupper((unsigned char)n[i])) are_equal = 0;
-            }
-            if (are_equal && (i == n_s)) condition = 0;
-            else {
-                if (m[idx] == 0) return 0;
-                else idx = m[idx];
-            }
-        }
-        return idx;
-    } else {
-        return 0;
-    }
+    if (strtype == 'n') { INSTANCE_FIND_WORD(Cell, Cell); } //native string
+    else if (strtype == 'c') { INSTANCE_FIND_WORD(char, unsigned char); } //character/C string
+    else { return 0; } //unknown
 }
 
 
 static int findChar(char x, char *str) {
-    for (unsigned i = 0; str[i] != '\0'; i++) {
-        if (str[i] == x) {
-            return i;
-        }
-    }
+    for (unsigned i = 0; str[i] != '\0'; i++)
+        if (str[i] == x) return i;
     return -1;
 }
 
@@ -163,9 +101,8 @@ static int delChar(char x, char *str) {
         pos = findChar(x, str);
         count += 1;
         unsigned i;
-        for (i = pos; str[i+1] != '\0'; i++) {
+        for (i = pos; str[i+1] != '\0'; i++)
             str[i] = str[i+1];
-        }
         str[i] = '\0';
     }
     if (count > 0) return pos;
@@ -179,7 +116,6 @@ void executePrimitive(Ctx *c, Cell *m, Cell id) {
 }
 void executeWord(Ctx *c, Cell *m, Cell w) { 
     m[c->program_counter_ptr] = w+3;
-
     _Bool silent = m[c->flags_ptr] >> 1 & 1;
     _Bool trace  = m[c->flags_ptr] >> 2 & 1;
     _Bool reached_end = 0;
@@ -330,9 +266,8 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
             char *endptr;
 
             char tmpstring[w_size+1];
-            for (int i = 0; i < w_size; i++) {
+            for (int i = 0; i < w_size; i++)
                 tmpstring[i] = lorig[i];
-            }
             tmpstring[w_size] = '\0';
             int pos = delChar('.', tmpstring);
             _Bool valid_dot = (w_size-1);
@@ -342,11 +277,10 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
                 else
                     valid_dot = 0;
                 w_size -= 1;
-            } else if (pos == -1) { // no dots, fine
+            } else if (pos == -1) // no dots, fine
                 valid_dot = (int)m[EXP] >= 0;
-            } else { //multiple dots, nonsense
+            else //multiple dots, nonsense
                 valid_dot = 0;
-            }
 
             Cell val = strtol(tmpstring, &endptr, m[c->base_ptr]);
             int converted_num_size = endptr-tmpstring;
@@ -358,18 +292,13 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
                     dataPush(c, m, val);
                 else {
                     // Tag for literal
-                    dataPush(c, m, t_num);
-                    PRIM(comma)(c, m);
-
+                    dataPush(c, m, t_num); PRIM(comma)(c, m);
                     // Actual value
-                    dataPush(c, m, val);
-                    PRIM(comma)(c, m);
+                    dataPush(c, m, val); PRIM(comma)(c, m);
                 }
             } else {
-                if (valid_dot)
-                    printf("{ERROR: unknown word ");
-                else
-                    printf("{ERROR: bad size after fixed point ");
+                if (valid_dot) printf("{ERROR: unknown word ");
+                else printf("{ERROR: bad size after fixed point ");
                 for (int i = 0; i < w_size + (pos > 0); i++)
                     printf("%c", lorig[i]);
                 printf("}\n");
@@ -407,13 +336,12 @@ void init(Ctx *c, Cell *m) {
     initPrimitives(c, m);
 }
 void initPrimitives(Ctx *c, Cell *m) {
-    for (unsigned i = 0; i < PRIM_NUM; i++)
-    {
-        if (primTable[i].func == NULL) { }
-        else {
+    for (unsigned i = 0; i < PRIM_NUM; i++) {
+        if (primTable[i].func != NULL) {
             unsigned name_size = char_strlen(primTable[i].name);
             Cell tmpnatstring[name_size];
-            for (unsigned j = 0; j < name_size; j++) tmpnatstring[j] = primTable[i].name[j];
+            for (unsigned j = 0; j < name_size; j++)
+                tmpnatstring[j] = primTable[i].name[j];
             makeWord(c, m, tmpnatstring, name_size, primTable[i].priority,
                       primTable[i].forbid_tco, primTable[i].allow_interpret,
                       CA(t_primitive, i, t_end), 3);
@@ -434,7 +362,6 @@ void printMemory(Cell *m, unsigned start, unsigned maxval, unsigned increment) {
 
 void repl(Ctx *c, Cell *m) {
     char line[1024];
-
     _Bool silent = 0;
     _Bool quit = 0;
     while(1) {
@@ -445,7 +372,8 @@ void repl(Ctx *c, Cell *m) {
         fgets(line, sizeof(line), stdin);
         unsigned lsize = char_strlen(line)-1; /*Exclude terminating newline*/
         if (char_strlen(line) > 1) {
-            for (unsigned i = 0; i < lsize; i++) m[c->inbuf_start+i] = line[i];
+            for (unsigned i = 0; i < lsize; i++)
+                m[c->inbuf_start+i] = line[i];
             m[c->inbuf_start+lsize] = '\0';
             if (!silent) printf("OUTPUT:");
             interpret(c, m, &m[c->inbuf_start], lsize, silent);

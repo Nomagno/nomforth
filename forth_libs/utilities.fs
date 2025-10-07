@@ -196,6 +196,7 @@
 : RESET_PAD_TO C_PAD_ADR ! ;
 
 : p" [CHAR] " PARSE ;
+: [p"] p" LIT, ; immediate
 : COUNT ( adr -- adr+1 strsize) DUP @ 1 -   SWAP 1 +   SWAP ;
 : UNCOUNT ( adr+1 strsize -- adr) DROP 1 - ;
 : ." p" DUP COUNT TYPE ;
@@ -374,6 +375,7 @@ lspA CONSTANT lsp_start
         DUP 0 != IF COUNT TYPE BL EMIT THEN
         @
     DUP 0 = UNTIL
+    DROP
 ;
 
 : ABORT ( string flag -- )

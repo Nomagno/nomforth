@@ -83,4 +83,23 @@ see test
 ." Disassembly of /STRING: "
 see /string
 
+: getpad C_PAD_ADR 1 - ;
+:: printpad
+    getpad 1 + >A
+    getpad @   >B
+    A>         >C
+
+    BEGIN C> 1 + B>  < WHILE
+        C> COUNT TYPE
+        1 SPACES
+        C> C> @ + >C
+    REPEAT
+;
+
+." Pad size: "
+getpad 1 +   getpad @ - .
+CR
+." PAD: "
+printpad
+
 bye
