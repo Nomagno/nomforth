@@ -28,6 +28,31 @@ PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
     else { nonzero_size; } \
     post_action
 
+
+#define SET_VARIABLE(__x) (__x << 31)
+#define SET_NO_TCO(__x) (__x << 30)
+#define SET_NO_WARN(__x) (__x << 29)
+#define SET_IMM(__x) (__x << 28)
+#define CHECK_VARIABLE(__x) ((__x >> 31) & 1)
+#define CHECK_NO_TCO(__x) ((__x >> 30) & 1)
+#define CHECK_NO_WARN(__x) ((__x >> 29) & 1)
+#define CHECK_IMM(__x) ((__x >> 28) & 1)
+
+#define LPAREN (
+#define RPAREN )
+#define EXTRACT_SIZE(__x) (3+(m[__x+2] & 0x0000FFFF))
+#define GET_PREV(__x, ...) (m[__x] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_NAME(__x, ...) (m[__x+1] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_HEADER(__x, ...) (m[__x+2] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_DATA(__x, ...) (m[__x + 3 __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN)])
+#define COMPILE_STATE (m[c->compile_state_ptr])
+#define DICTPTR (m[c->dict_pos_ptr])
+#define PROGRAM_COUNTER (m[c->program_counter_ptr])
+#define EXP_PTR m[c->exp_ptr]
+#define BASE_PTR m[c->base_ptr]
+
+
+
 static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
 static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
 
@@ -35,14 +60,14 @@ static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (
 MAKEPRIM(colon) {
     CONSUMER(' ', C_LOR(), , WARNING(colon));
     makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
-    m[c->compile_state_ptr] = 1;
+    COMPILE_STATE = 1;
 }
 MAKEPRIM(colonAnon) {
     makeWord(c, m, (Cell[]){0}, 0, 0, 0, 0, NULL, 0);
-    m[c->compile_state_ptr] = 1;
-    dataPush(c, m, m[c->dict_pos_ptr]);
+    COMPILE_STATE = 1;
+    dataPush(c, m, DICTPTR);
 }
-MAKEPRIM(semicolon){ appendWord(c, m, CA(t_end), 1); m[c->compile_state_ptr] = 0; }
+MAKEPRIM(semicolon){ appendWord(c, m, CA(t_end), 1); COMPILE_STATE = 0; }
 /* Comments*/
 /*---------------------------------------------*/
 MAKEPRIM(leftparen) { CONSUMER(')', , c->inter_str++, ); }
@@ -60,16 +85,17 @@ MAKEPRIM(emptyword) {
 MAKEPRIM(create) {
     CONSUMER(' ', C_LOR(), , WARNING(create));
     makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
-    m[m[c->dict_pos_ptr]+2] |= 0x80000000; /*Mark as variable by setting highest bit*/
-    appendWord(c, m, CA(t_num, m[c->dict_pos_ptr]+7), 2); // +3, pointer to first empty cell
+    Cell curr = DICTPTR;
+    GET_HEADER(curr) |= SET_VARIABLE(curr); /*Mark as variable*/
+    appendWord(c, m, CA(t_num, curr+3 + 4), 2); // +3, pointer to first empty cell
     appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
 }
 MAKEPRIM(comma) { Cell val = dataPop(c, m); appendWord(c, m, CA(val), 1); }
 MAKEPRIM(worddoesprim) { // DO NOT CALL THE WORDDOESPRIM C PRIMITIVE DIRECTLY!
-    Cell current_word = m[c->dict_pos_ptr];
-    Cell pc = funcPeek(c, m); 
-    m[current_word+5] = t_absjump; // replace first dummy END created by VAR with a jump
-    m[current_word+6] = pc+2; //replace other dummy END with jump value
+    Cell current_word = DICTPTR;
+    Cell pc = funcPeek(c, m);
+    GET_DATA(current_word, 2) = t_absjump; // replace first dummy END created by VAR with a jump
+    GET_DATA(current_word, 3) = pc+2; //replace other dummy END with jump value
 }
 MAKEPRIM(worddoes) {
     Cell appended_w = findWord(c, m, 'c', "DOES>PRIM", char_strlen("DOES>PRIM"));
@@ -94,7 +120,7 @@ MAKEPRIM(word) {
 MAKEPRIM(parse) {
     int w_size = advanceTo(&c->inter_str, c->inter_max, (char)dataPop(c, m), 0);
     if (w_size < 0) { w_size = -w_size; }
-    if (w_size == 0) { printf("WARNING: 'PARSER' called with no name\n"); }
+    if (w_size == 0) { WARNING(parse); }
     Cell *lorig = c->inter_str-w_size;
     c->inter_str += 1;
     Cell created_string = addToPad(c, m, lorig, w_size);
@@ -115,13 +141,13 @@ MAKEPRIM(is) {
     CONSUMER(' ', C_LOR(), , WARNING(is));
     Cell assigned_word = findWord(c, m, 'n', lorig, w_size);
     Cell popped_xt = dataPop(c, m);
-    if ((m[assigned_word+2] & 0x0000FFFF) >= 1)
-        m[assigned_word+3] = popped_xt;
+    if (EXTRACT_SIZE(assigned_word) - 3 >= 1)
+        GET_DATA(assigned_word, 0) = popped_xt;
     else
         printf("{ERROR: Can't assign to non-deferred word with inappropiate size %u}\n", m[assigned_word]);
 }
 MAKEPRIM(defer) {
-    CONSUMER(' ', C_LOR(), , WARNING(edfer));
+    CONSUMER(' ', C_LOR(), , WARNING(defer));
     makeWord(c, m, lorig, w_size, 0, 0, 0, CA(t_end, t_end), 2);
 }
 MAKEPRIM(postpone) {
@@ -331,8 +357,8 @@ MAKEPRIM(ddot) { printf(" %ld", ((int64_t)dataPop(c, m) << 32) + (uint32_t)dataP
 MAKEPRIM(udot) { printf(" %u", dataPop(c, m)); }
 MAKEPRIM(xdot) { printf(" %08X", dataPop(c, m)); }
 MAKEPRIM(dotmem) {
-    Cell start = dataPop(c, m), end = dataPop(c, m), step = dataPop(c, m);
-    printMemory(m, start, end, step);
+    Cell end = dataPop(c, m), step = dataPop(c, m), start = dataPop(c, m);
+    printMemory(m, start, step, end);
 }
 MAKEPRIM(dotstack) {
     unsigned stacksize = m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));

@@ -30,60 +30,83 @@ Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size) {
     m[c->pad_pos_ptr] = str_loc + str_size;
     return str_loc;
 }
+
+#define SET_VARIABLE(__x) (__x << 31)
+#define SET_NO_TCO(__x) (__x << 30)
+#define SET_NO_WARN(__x) (__x << 29)
+#define SET_IMM(__x) (__x << 28)
+#define CHECK_VARIABLE(__x) ((__x >> 31) & 1)
+#define CHECK_NO_TCO(__x) ((__x >> 30) & 1)
+#define CHECK_NO_WARN(__x) ((__x >> 29) & 1)
+#define CHECK_IMM(__x) ((__x >> 28) & 1)
+
+#define LPAREN (
+#define RPAREN )
+#define EXTRACT_SIZE(__x) (3+(m[__x+2] & 0x0000FFFF))
+#define GET_PREV(__x, ...) (m[__x] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_NAME(__x, ...) (m[__x+1] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_HEADER(__x, ...) (m[__x+2] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_DATA(__x, ...) (m[__x + 3 __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN)])
+#define COMPILE_STATE (m[c->compile_state_ptr])
+#define DICTPTR (m[c->dict_pos_ptr])
+#define PROGRAM_COUNTER (m[c->program_counter_ptr])
+#define EXP_PTR m[c->exp_ptr]
+#define BASE_PTR m[c->base_ptr]
+
+
 void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size,
               _Bool p, _Bool forbid_tco, _Bool allow_interpret, Cell *data, unsigned data_size) {
-    Cell prev_loc = m[c->dict_pos_ptr];
-    Cell prev_size = (prev_loc == 0) ? DICT_START : (3+(m[prev_loc+2] & 0x0000FFFF));
-    m[c->dict_pos_ptr] = prev_loc + prev_size;
+    Cell prev = DICTPTR;
+    Cell prev_size = (prev == 0) ? DICT_START : EXTRACT_SIZE(prev);
+    DICTPTR = prev + prev_size;
 
-    Cell curr_loc = m[c->dict_pos_ptr];
-    m[curr_loc] = prev_loc;
-    m[curr_loc+1] = addToPad(c, m, name, name_size);
-    m[curr_loc+2] = (forbid_tco << 30) | (allow_interpret << 29) | (p << 28) | (data_size & 0x0000FFFF);
+    Cell curr = DICTPTR;
+    GET_PREV(curr) = prev;
+    GET_NAME(curr) = addToPad(c, m, name, name_size);
+    GET_HEADER(curr) = SET_NO_TCO(forbid_tco) | SET_NO_WARN(allow_interpret) | SET_IMM(p) | data_size;
     for (unsigned i = 0; i < data_size; i++)
-        m[curr_loc+3+i] = data[i];
+        GET_DATA(curr, i) = data[i];
 }
-Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size) {
-    Cell curr_loc = m[c->dict_pos_ptr];
-    unsigned size = 3+(m[curr_loc+2] & 0x0000FFFF);
+Cell appendWord(Ctx *c, Cell *m, Cell *data, unsigned data_size) {
+    Cell curr = DICTPTR;
+    unsigned size = EXTRACT_SIZE(curr);
     for (unsigned i = 0; i < data_size; i++)
-        m[curr_loc+size+i] = data[i];
-    m[curr_loc+2] += data_size;
+        m[curr+size+i] = data[i];
+    GET_HEADER(curr) += data_size;
 
     // Pointer to the last written byte of data,
     // used for easily placing references in the data
     // stack during the compilation process
-    return (curr_loc + (size-1) + data_size);
+    return (curr + (size-1) + data_size);
 }
 
 // Just to avoid pasting the same code twice
-#define INSTANCE_FIND_WORD(__x, __y) \
+#define INSTANCE_FIND_WORD(__x) \
 __x *n = (__x *)s;\
-Cell n_s = s_size;\
-if (n_s == 0) return 0;\
+if (s_size == 0) return 0;\
 _Bool condition = 1;\
-Cell idx = m[c->dict_pos_ptr];\
+Cell curr = DICTPTR;\
 while (condition) {\
-    Cell temp_loc = m[idx+1];\
-    Cell temp_s = m[temp_loc] - 1;\
+    Cell temp_str = GET_NAME(curr);\
+    Cell temp_str_size = m[temp_str] - 1;\
     unsigned i;\
     _Bool are_equal = 1;\
-    if (n_s != temp_s) are_equal = 0;\
-    for (i = 0; i < n_s && are_equal; i++) {\
-        if (toupper(m[temp_loc+1+i]) != toupper((__x)n[i])) are_equal = 0;\
+    if (s_size != temp_str_size) are_equal = 0;\
+    for (i = 0; i < s_size && are_equal; i++) {\
+        if (toupper(m[temp_str+1+i]) != toupper((__x)n[i])) are_equal = 0;\
     }\
-    if (are_equal && (i == n_s)) condition = 0;\
+    if (are_equal && (i == s_size)) condition = 0;\
     else {\
-        if (m[idx] == 0) return 0;\
-        else idx = m[idx];\
+        if (GET_PREV(curr) == 0) return 0;\
+        else curr = GET_PREV(curr);\
     }\
 }\
-return idx;
+return curr;
 
 
 Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size) {
-    if (strtype == 'n') { INSTANCE_FIND_WORD(Cell, Cell); } //native string
-    else if (strtype == 'c') { INSTANCE_FIND_WORD(char, unsigned char); } //character/C string
+    if (strtype == 'n') { INSTANCE_FIND_WORD(Cell); } //native string
+    else if (strtype == 'c') { INSTANCE_FIND_WORD(char); } //character/C string
     else { return 0; } //unknown
 }
 
@@ -115,56 +138,69 @@ void executePrimitive(Ctx *c, Cell *m, Cell id) {
     else primTable[id].func(c, m);
 }
 void executeWord(Ctx *c, Cell *m, Cell w) { 
-    m[c->program_counter_ptr] = w+3;
-    _Bool silent = m[c->flags_ptr] >> 1 & 1;
+    PROGRAM_COUNTER = w+3;
+    //_Bool silent = m[c->flags_ptr] >> 1 & 1;
     _Bool trace  = m[c->flags_ptr] >> 2 & 1;
     _Bool reached_end = 0;
-    if (!silent && trace) printf("{TRACE: going to function 0x%X}\n", m[c->program_counter_ptr]);
+    _Bool do_trace = trace;
+
+    if (do_trace) {
+        printf("{TRACE: entering word 0x%X, ", w);
+        if (GET_NAME(w) == 0) {
+            printf("[[NO NAME]]");
+        } else {
+            for (unsigned i = 0; i < m[GET_NAME(w)]-1; i++) {
+                printf("%c", m[GET_NAME(w)+1+i]);
+            }
+        }
+        printf("}\n");
+    }
+
     while (!reached_end) {
-        Cell contents = m[c->program_counter_ptr];
+        Cell contents = PROGRAM_COUNTER;
         switch(m[contents]){
         case t_unknown_label:
             printf("{ERROR: 0 IS NOT A VALID INSTRUCTION, PC 0x%X}\n", contents);
             reached_end = 1;
             break;
         case t_nop:
-            m[c->program_counter_ptr] += 1;
+            PROGRAM_COUNTER += 1;
             break;
         case t_primitive: ;
-            if (!silent && trace) printf("{TRACE: going to primitive 0x%X}\n", m[contents+1]);
+            if (do_trace) printf("{TRACE: going to primitive 0x%X}\n", m[contents+1]);
 
             // in case the primitive tries to (or accidentally) hijack the program
             // counter, we preserve and restore it ourselves
-            Cell tmp_pc = m[c->program_counter_ptr];
+            Cell tmp_pc = PROGRAM_COUNTER;
             executePrimitive(c, m, m[contents+1]);
-            m[c->program_counter_ptr] = tmp_pc;
+            PROGRAM_COUNTER = tmp_pc;
 
-            m[c->program_counter_ptr] += 2;
+            PROGRAM_COUNTER += 2;
             break;
         case t_num:
             dataPush(c, m, m[contents+1]);
-            m[c->program_counter_ptr] += 2;
+            PROGRAM_COUNTER += 2;
             break;
         case t_reljump:
-            m[c->program_counter_ptr] += m[contents+1];
+            PROGRAM_COUNTER += m[contents+1];
             break;
         case t_condreljump: {
             Cell v = dataPop(c, m);
-            if (v == 0) m[c->program_counter_ptr] += m[contents+1];
-            else m[c->program_counter_ptr] += 2;
+            if (v == 0) PROGRAM_COUNTER += m[contents+1];
+            else PROGRAM_COUNTER += 2;
             }
             break;
         case t_reljumpback:
-            m[c->program_counter_ptr] -= m[contents+1];
+            PROGRAM_COUNTER -= m[contents+1];
             break;
         case t_condreljumpback: {
             Cell v = dataPop(c, m);
-            if (v == 0) m[c->program_counter_ptr] -= m[contents+1];
-            else m[c->program_counter_ptr] += 2;
+            if (v == 0) PROGRAM_COUNTER -= m[contents+1];
+            else PROGRAM_COUNTER += 2;
             }
             break;
         case t_absjump:
-            m[c->program_counter_ptr] = m[contents+1];
+            PROGRAM_COUNTER = m[contents+1];
             break;
         case t_leavelabel:
             printf("{ERROR: Non-replaced leave label, this shouldn't have happened}\n");
@@ -178,16 +214,16 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
         case t_end:
             ;
             Cell next_pc = funcPop(c, m);
-            if (!silent && trace) printf("{TRACE: going back to pc 0x%X from 0x%X}\n", next_pc, contents);
+            if (do_trace) printf("{TRACE: going back to pc 0x%X from 0x%X}\n", next_pc, contents);
             if (next_pc == 0) {
                 // If the next program counter is 0,
                 // we're going back to the interpreter
-                m[c->program_counter_ptr] = 0;
+                PROGRAM_COUNTER = 0;
                 reached_end = 1;
             } else {
                 // By convention the program counter needs to be incremented from the callee
-                m[c->program_counter_ptr] = next_pc;
-                m[c->program_counter_ptr] += 1;
+                PROGRAM_COUNTER = next_pc;
+                PROGRAM_COUNTER += 1;
             }
             break;
         case t_execute:
@@ -195,17 +231,27 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
             Cell new_w = 0;
             new_w = dataPop(c, m);
         default:
-            if ((m[m[contents]+2] >> 30 & 1) || (m[contents+1] != t_end)) {
-                funcPush(c, m, m[c->program_counter_ptr]);
+            if (CHECK_NO_TCO(GET_HEADER(m[contents])) || (m[contents+1] != t_end)) {
+                funcPush(c, m, PROGRAM_COUNTER);
             } else {
                 // If it's a tail call no need to push another stack frame,
                 // Unless the word is forbidden from being Tail Call Optimized
-                if (!silent && trace) printf("{TRACE: Next jump is in tail position}\n");
+                if (do_trace) printf("{TRACE: Next jump is in tail position}\n");
             }
             if (m[contents] != t_execute) new_w = m[contents]; 
             contents = new_w+3;
-            m[c->program_counter_ptr] = contents;
-            if (!silent && trace) printf("{TRACE: jumping to function 0x%X}\n", contents);
+            PROGRAM_COUNTER = contents;
+            if (do_trace) {
+                printf("{TRACE: jumping to word 0x%X, ", new_w);
+                if (GET_NAME(new_w) == 0) {
+                    printf("[[NO NAME]]");
+                } else {
+                    for (unsigned i = 0; i < m[GET_NAME(new_w)]-1; i++) {
+                        printf("%c", m[GET_NAME(new_w)+1+i]);
+                    }
+                }
+                printf("}\n");
+            }
             break;
         }
     }
@@ -235,7 +281,7 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
         if (w_size == 0) break;
 
         Cell *lorig = c->inter_str-w_size;
-        
+
         Cell w = findWord(c, m, 'n', lorig, w_size);
         if (w != 0) {
             /*Highest bit is for auxiliary info,
@@ -243,10 +289,10 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
               third highest is 0 if it is forbidden to interpret the word,
               fourth highest is for immediacy info
             */
-            _Bool priority = m[w+2]>>28 & 1;
-            _Bool allow_interpreting = m[w+2]>>29 & 1;
-            if (priority || m[c->compile_state_ptr] == 0) {
-                if (priority && !allow_interpreting && m[c->compile_state_ptr] == 0) {
+            _Bool priority = CHECK_IMM(GET_HEADER(w));
+            _Bool allow_interpreting = CHECK_NO_WARN(GET_HEADER(w));
+            if (priority || COMPILE_STATE == 0) {
+                if (priority && !allow_interpreting && COMPILE_STATE == 0) {
                     printf("{WARNING: SHOULD NOT INTERPRET COMPILE-ONLY WORD ");
                     for (int i = 0; i < w_size; i++)
                         printf("%c", lorig[i]);
@@ -256,6 +302,7 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
                 // Mark that lets the inner interpreter know
                 //  it's going back to the outer interpreter
                 funcPush(c, m, 0);
+                //printf("Found: %u\n", w);
                 executeWord(c, m, w);
             } else {
                 dataPush(c, m, w);
@@ -272,23 +319,23 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
             int pos = delChar('.', tmpstring);
             _Bool valid_dot = (w_size-1);
             if (pos > 0) { //one dot
-                if ((int)m[EXP] < 0)
-                    valid_dot = (w_size-1)-pos == -(int)m[EXP];
+                if ((int)m[EXP_PTR] < 0)
+                    valid_dot = (w_size-1)-pos == -(int)m[EXP_PTR];
                 else
                     valid_dot = 0;
                 w_size -= 1;
             } else if (pos == -1) // no dots, fine
-                valid_dot = (int)m[EXP] >= 0;
+                valid_dot = (int)m[EXP_PTR] >= 0;
             else //multiple dots, nonsense
                 valid_dot = 0;
 
-            Cell val = strtol(tmpstring, &endptr, m[c->base_ptr]);
+            Cell val = strtol(tmpstring, &endptr, BASE_PTR);
             int converted_num_size = endptr-tmpstring;
 
             if (l_c != 0) *c->inter_str = ' ';
 
             if (valid_dot && converted_num_size == w_size) {
-                if (m[c->compile_state_ptr] == 0)
+                if (COMPILE_STATE == 0)
                     dataPush(c, m, val);
                 else {
                     // Tag for literal
@@ -348,7 +395,7 @@ void initPrimitives(Ctx *c, Cell *m) {
         }
     }
 }
-void printMemory(Cell *m, unsigned start, unsigned maxval, unsigned increment) {
+void printMemory(Cell *m, unsigned start, unsigned increment, unsigned maxval) {
     for(unsigned i = start; i < maxval; i += increment) {
         printf("0x%4X:", i);
         for (unsigned j = i; j < i+increment; j++) {

@@ -97,7 +97,7 @@ see /string
 ;
 
 ." Pad size: "
-getpad 1 +   getpad @ - .
+getpad 1 +   getpad @ SWAP - .
 CR
 ." PAD: "
 printpad

@@ -10,7 +10,7 @@
 ;
 
 : PRINTNEXT ( adr -- , prints values pointed to by next cell) 1 + @ . ;
-: PRINTWORD ( xt -- , prints name of represented by xt) >NAME COUNT TYPE ;
+: PRINTWORD ( xt -- , prints name of represented by xt) DUP >NAME DUP 0 = IF DROP STRLIT" (UNNAMED)" X. ELSE COUNT TYPE DROP THEN ;
 
 : TABS 2 * SPACES ;
 : GEO_RECIP ( n m -- x )
