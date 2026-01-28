@@ -25,6 +25,7 @@
 : CELL+ 1 + ;
 : NOOP ;
 : COMPILE, , ;
+: ALIGN ;
 
 : -ROT ROT ROT ;
 
@@ -46,110 +47,8 @@
   R> AND
 ;
 
-( Control flow words )
-: ?DO ( -- dest / D: l i -- , R: -- l i )
-    PPW 2DUP
-    PPW >
-    POSTPONE IF
-    POSTPONE BEGIN
-    PPW 2>R
-; immediate
-: DO ( -- dest / D: l i -- , R: -- l i )
-    1 LIT,
-    POSTPONE IF
-    POSTPONE BEGIN
-    PPW 2>R
-; immediate
-: LOOP
-    PPW 2R>
-    1 LIT,
-    PPW +
-    PPW 2DUP
-    PPW <=
-    POSTPONE UNTIL
-    POSTPONE THEN
-    PPW 2DROP ( WE DROP FROM THE RETURN STACK BECAUSE IF WE )
-              ( DID NOT LOOP, THE 2>R WAS NOT EXECUTED YET )
-; immediate
-: +LOOP
-    PPW 2R>
-    PPW ROT
-    PPW +
-    PPW 2DUP
-    PPW <=
-    POSTPONE UNTIL
-    POSTPONE THEN
-    PPW 2DROP ( WE DROP FROM THE RETURN STACK BECAUSE IF WE )
-              ( DID NOT LOOP, THE 2>R WAS NOT EXECUTED YET )
-; immediate
-: UNLOOP  PPW 2R>  PPW 2DROP ; immediate
-: I r> r> DUP >r SWAP >r ; forbid_tco
-: +I r> SWAP r> + >r >r ; forbid_tco
-
-: CASE
-    0 ( setup parameter with the amount of AHEAD references)
-; IMMEDIATE
-: GOF ( GENERAL OF, SIMPLY CONSUMES A FLAG)
-    POSTPONE IF
-    SWAP ( tuck OF reference behind reference count)
-; immediate
-: ROF ( x1 x2 x3 -- x1, if x2<=x1<=x3 execute, else skip to right after the closing ENDOF)
-    PPW ROT
-    PPW DUP
-    PPW 2SWAP
-    PPW BETWEEN
-    POSTPONE GOF
-    PPW DROP
-; immediate
-: OF ( x1 x2 -- x1, if x1==x2 execute, else skip to right after the closing ENDOF)
-    PPW OVER
-    PPW =
-    POSTPONE GOF
-    PPW DROP
-; immediate
-: ENDOF
-    POSTPONE AHEAD ( create AHEAD reference to skip default case)
-    ( OF_REF REF_COUNT AHEAD)
-    -ROT ( AHEAD OF_REF REF_COUNT )
-    SWAP ( AHEAD REF_COUNT OF_REF )
-    POSTPONE THEN ( resolve last OF reference )
-    1 + ( Increase reference count )
-; immediate
-: ENDCASE ( x -- )
-    PPW DROP
-    0 ?DO ( resolve all AHEAD references )
-        POSTPONE THEN
-    LOOP
-; immediate
-
-: ELSE ( orig1 -- orig2 / -- )
-   ( resolve IF supplying alternate execution )
-    POSTPONE AHEAD       ( unconditional forward branch orig2 )
-    SWAP            ( put orig1 back on top )
-    POSTPONE THEN       ( resolve forward branch from orig1 )
-; immediate
-: WHILE ( dest -- orig dest / flag -- )
-    POSTPONE IF          ( conditional forward brach )
-    SWAP           ( keep dest on top )
-; immediate
-: REPEAT ( orig dest -- / -- )
-   ( resolve a single WHILE and return to BEGIN )
-    POSTPONE AGAIN       ( uncond. backward branch to dest )
-    POSTPONE THEN        ( resolve forward branch from orig )
-; immediate
-
-: TRUE -1 ;
-: FALSE 0 ;
 : BOOL_NORM LOGICAL_NOT LOGICAL_NOT ;
 
-( Variable words)
-: ISVAR ( xt -- is_it_a_properly_declared_variable) 2 + @ 28 rshift 8 and ;
-: VARIABLE ( "name" --  ) CREATE 0 , ;
-: CONSTANT ( n "name" --  )
-    EMPTY_WORD
-    LIT,
-    C_T_E ,
-;
 : BEGIN-STRUCTURE ( -- addr 0 ; Exec -- size )
     CREATE
     HERE 0 0 , ( Mark stack, put down empty value )
@@ -205,9 +104,7 @@
     PPW COUNT
     PPW TYPE
 ; immediate
-: sp"
-    p" LIT,
-; immediate
+: sp"  p" LIT, ; immediate
 : FILL ( c-char u char -- ) ROT ROT 0 ?DO 2DUP ! 1 + LOOP 2DROP ;
 : MOVE ( addr1 addr2 u -- )
     ( copies u cells starting from address 1 intro address 2)
@@ -221,7 +118,6 @@
     2DROP
 ;
 : CMOVE MOVE ;
-: ALIGN ;
 
 : /STRING ( str n u -- str+u n-u )
     DUP -ROT - ( str u newsize)
@@ -250,6 +146,23 @@
     DP @ CREATE ,
     DOES> @ DP !
 ;
+
+: ABORT ( string flag -- )
+    IF
+      STRLIT" EXCEPTION: "
+      COUNT TYPE
+      QUIT
+    ELSE
+      DROP
+    THEN
+;
+: ABORT" ( flag -- )
+    POSTPONE p"
+    POSTPONE LITERAL
+    PPW SWAP
+    PPW ABORT
+; immediate
+
 
 ( [n stack items] n -- environment )
 ( like variable capture for closures )
@@ -361,13 +274,6 @@ lspA CONSTANT lsp_start
 ( example usage that prints 2 1:)
 ( :: te 1 >c 2 . c> . ; )
 
-
-( -- n, where n is 0 if an invalid character was entered, and a code 1-26 if a lowercase alphabet letter was entered)
-: GETLETTER GETC DUP DUP [CHAR] a >= SWAP [CHAR] z <= AND IF [char] a - 1 + ELSE DROP 0 THEN ;
-: GETNUMBER GETN ;
-
-: EVALUATE SAVE-INPUT INTERPRET RESTORE-INPUT ;
-
 : WORDS
     DP @
     BEGIN
@@ -377,21 +283,3 @@ lspA CONSTANT lsp_start
     DUP 0 = UNTIL
     DROP
 ;
-
-: ABORT ( string flag -- )
-    IF
-      STRLIT" EXCEPTION: "
-      COUNT TYPE
-      QUIT
-    ELSE
-      DROP
-    THEN
-;
-            
-
-: ABORT" ( flag -- )
-    POSTPONE p"
-    POSTPONE LITERAL
-    PPW SWAP
-    PPW ABORT
-; immediate

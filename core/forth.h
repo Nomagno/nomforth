@@ -65,9 +65,9 @@ typedef struct {
     Cell heap_start;
     Cell inbuf_start;
 
-    Cell *inter_max;
-    Cell *inter_min;
-    Cell *inter_str;
+    Cell *input_end;
+    Cell *input_start;
+    Cell *input;
 
     Cell base_ptr;
     Cell exp_ptr;
@@ -127,8 +127,8 @@ Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size);
 
 void executePrimitive(Ctx *c, Cell *m, Cell id);
 void executeWord(Ctx *c, Cell *m, Cell w);
-int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading);
-void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent);
+int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading);
+int interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent);
 
 void init(Ctx *c, Cell *m);
 void initPrimitives(Ctx *c, Cell *m);

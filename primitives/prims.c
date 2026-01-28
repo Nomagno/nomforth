@@ -15,14 +15,14 @@
 PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 
 #define WARNING(name) printf("WARNING: '%s' called with no name\n", #name)
-#define C_LOR() Cell *lorig = c->inter_str-w_size;
+#define C_LOR() Cell *lorig = c->input-w_size;
 /* CONSUMER is a macro to reflect a very common forth pattern:
  * A word that hijacks the input stream, advances it until the next character
  * of a certain type is found (skipping all initial consecutive occurences of the
  * character), and depending on if 0 or non-0 significant characters were advanced,
  * performs different actions. Then, performs an action unconditionally. */
 #define CONSUMER(ch, post_action, nonzero_size, ...) \
-    int w_size = advanceTo(&c->inter_str, c->inter_max, ch, 1); \
+    int w_size = consumeWord(&c->input, c->input_end, ch, 1); \
     if (w_size < 0) { w_size = -w_size; } \
     if (w_size == 0) { __VA_ARGS__; } \
     else { nonzero_size; } \
@@ -70,8 +70,8 @@ MAKEPRIM(colonAnon) {
 MAKEPRIM(semicolon){ appendWord(c, m, CA(t_end), 1); COMPILE_STATE = 0; }
 /* Comments*/
 /*---------------------------------------------*/
-MAKEPRIM(leftparen) { CONSUMER(')', , c->inter_str++, ); }
-MAKEPRIM(backslash) { CONSUMER('\n', , c->inter_str++, ); }
+MAKEPRIM(leftparen) { CONSUMER(')', , c->input++, ); }
+MAKEPRIM(backslash) { CONSUMER('\n', , c->input++, ); }
 /* Quit the interpreter immediately*/
 /*---------------------------------------------*/
 MAKEPRIM(bye) { printf("\nThanks for using nomForth.\n"); exit(0); }
@@ -118,11 +118,11 @@ MAKEPRIM(word) {
     dataPush(c, m, created_string);
 }
 MAKEPRIM(parse) {
-    int w_size = advanceTo(&c->inter_str, c->inter_max, (char)dataPop(c, m), 0);
+    int w_size = consumeWord(&c->input, c->input_end, (char)dataPop(c, m), 0);
     if (w_size < 0) { w_size = -w_size; }
     if (w_size == 0) { WARNING(parse); }
-    Cell *lorig = c->inter_str-w_size;
-    c->inter_str += 1;
+    Cell *lorig = c->input-w_size;
+    c->input += 1;
     Cell created_string = addToPad(c, m, lorig, w_size);
     dataPush(c, m, created_string);
 }
@@ -157,17 +157,17 @@ MAKEPRIM(postpone) {
 }
 MAKEPRIM(save_input){
     R_SAVE();
-    funcPush(c, m, c->inter_max-m);
-    funcPush(c, m, c->inter_min-m);
-    funcPush(c, m, c->inter_str-m);
+    funcPush(c, m, c->input_end-m);
+    funcPush(c, m, c->input_start-m);
+    funcPush(c, m, c->input-m);
     R_RESTORE();
 }
 
 MAKEPRIM(restore_input){
     R_SAVE();
-    c->inter_str = m+funcPop(c, m);
-    c->inter_min = m+funcPop(c, m);
-    c->inter_max = m+funcPop(c, m);
+    c->input = m+funcPop(c, m);
+    c->input_start = m+funcPop(c, m);
+    c->input_end = m+funcPop(c, m);
     R_RESTORE();
 }
 

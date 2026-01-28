@@ -256,39 +256,40 @@ void executeWord(Ctx *c, Cell *m, Cell w) {
         }
     }
 }
-int advanceTo(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading) {
-    if (skip_leading) { while (**s == target) *s += 1; }
-    else { if (**s == ' ') *s += 1; }
+int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading) {
+    if (skip_leading)
+        while (**s == target)
+            *s += 1; 
+    else if (**s == ' ')
+        *s += 1;
     Cell *orig = *s;
 
-    while (**s != target && *s <= max) *s += 1;
+    while (**s != target && *s <= max)
+        *s += 1;
     Cell *now = *s;
-
-    if (*s < max && !skip_leading) { };
 
     if (now > max) return -(now-orig);
     else return (now-orig);
 }
-void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
+int interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
     _Bool l_c = 1;
     _Bool was_there_error = 0;
-    c->inter_min = l;
-    c->inter_max = l+l_size-1;
-    c->inter_str = l;
+    c->input_start = l;
+    c->input_end = l+l_size-1;
+    c->input = l;
     while(l_c) {
-        int w_size = advanceTo(&c->inter_str, c->inter_max, ' ', 1);
+        int w_size = consumeWord(&c->input, c->input_end, ' ', 1);
         if (w_size < 0) { l_c = 0; w_size = -w_size; } else
         if (w_size == 0) break;
 
-        Cell *lorig = c->inter_str-w_size;
+        Cell *lorig = c->input-w_size;
 
         Cell w = findWord(c, m, 'n', lorig, w_size);
         if (w != 0) {
-            /*Highest bit is for auxiliary info,
-              second highest is for TCO permissions,
-              third highest is 0 if it is forbidden to interpret the word,
-              fourth highest is for immediacy info
-            */
+            // - Highest bit is for auxiliary info,
+            // - Second highest is for TCO permissions,
+            // - Third highest is 0 if it is forbidden to interpret the word,
+            // - Fourth highest is for immediacy info
             _Bool priority = CHECK_IMM(GET_HEADER(w));
             _Bool allow_interpreting = CHECK_NO_WARN(GET_HEADER(w));
             if (priority || COMPILE_STATE == 0) {
@@ -302,14 +303,13 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
                 // Mark that lets the inner interpreter know
                 //  it's going back to the outer interpreter
                 funcPush(c, m, 0);
-                //printf("Found: %u\n", w);
                 executeWord(c, m, w);
             } else {
                 dataPush(c, m, w);
                 PRIM(comma)(c, m);
             }
         } else {
-            *c->inter_str = '\0';
+            *c->input = '\0';
             char *endptr;
 
             char tmpstring[w_size+1];
@@ -319,20 +319,23 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
             int pos = delChar('.', tmpstring);
             _Bool valid_dot = (w_size-1);
             if (pos > 0) { //one dot
-                if ((int)m[EXP_PTR] < 0)
-                    valid_dot = (w_size-1)-pos == -(int)m[EXP_PTR];
-                else
+                if ((int)m[EXP_PTR] < 0) {
+                    int number_of_digits_after_point = (w_size-1)-pos;
+                    valid_dot = number_of_digits_after_point == -(int)m[EXP_PTR];
+                } else {
                     valid_dot = 0;
+                }
                 w_size -= 1;
-            } else if (pos == -1) // no dots, fine
+            } else if (pos == -1) { // no dots
                 valid_dot = (int)m[EXP_PTR] >= 0;
-            else //multiple dots, nonsense
+            } else { //multiple dots, nonsense
                 valid_dot = 0;
+            }
 
             Cell val = strtol(tmpstring, &endptr, BASE_PTR);
             int converted_num_size = endptr-tmpstring;
 
-            if (l_c != 0) *c->inter_str = ' ';
+            if (l_c != 0) *c->input = ' ';
 
             if (valid_dot && converted_num_size == w_size) {
                 if (COMPILE_STATE == 0)
@@ -355,6 +358,7 @@ void interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent) {
         }
     }
     if (!was_there_error && !silent) printf(" {OK}\n");
+    //if (was_there_error)
 }
 
 void init(Ctx *c, Cell *m) {
@@ -417,14 +421,15 @@ void repl(Ctx *c, Cell *m) {
         if (quit) return;
 
         fgets(line, sizeof(line), stdin);
-        unsigned lsize = char_strlen(line)-1; /*Exclude terminating newline*/
-        if (char_strlen(line) > 1) {
-            for (unsigned i = 0; i < lsize; i++)
-                m[c->inbuf_start+i] = line[i];
-            m[c->inbuf_start+lsize] = '\0';
-            if (!silent) printf("OUTPUT:");
-            interpret(c, m, &m[c->inbuf_start], lsize, silent);
-        }
+        unsigned lsize = char_strlen(line)-1; // Exclude terminating newline
+        if (char_strlen(line) <= 0)
+            continue;
+
+        for (unsigned i = 0; i < lsize; i++)
+            m[c->inbuf_start+i] = line[i];
+        m[c->inbuf_start+lsize] = '\0';
+        if (!silent) printf("OUTPUT:");
+        interpret(c, m, &m[c->inbuf_start], lsize, silent);
     }    
 }
 
