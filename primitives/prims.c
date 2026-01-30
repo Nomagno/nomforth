@@ -6,11 +6,11 @@
 #include <sys/time.h>
 #include "prims.h"
 
-#define D_SAVE() Cell saved_d = dataPop(c, m)
-#define D_RESTORE() dataPush(c, m, saved_d)
+#define D_SAVE() Cell saved_d = dataPop(c)
+#define D_RESTORE() dataPush(c, saved_d)
 
-#define R_SAVE() Cell saved_r = funcPop(c, m)
-#define R_RESTORE() funcPush(c, m, saved_r)
+#define R_SAVE() Cell saved_r = funcPop(c)
+#define R_RESTORE() funcPush(c, saved_r)
 
 PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 
@@ -40,16 +40,16 @@ PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 
 #define LPAREN (
 #define RPAREN )
-#define EXTRACT_SIZE(__x) (3+(m[__x+2] & 0x0000FFFF))
-#define GET_PREV(__x, ...) (m[__x] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_NAME(__x, ...) (m[__x+1] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_HEADER(__x, ...) (m[__x+2] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_DATA(__x, ...) (m[__x + 3 __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN)])
-#define COMPILE_STATE (m[c->compile_state_ptr])
-#define DICTPTR (m[c->dict_pos_ptr])
-#define PROGRAM_COUNTER (m[c->program_counter_ptr])
-#define EXP_PTR m[c->exp_ptr]
-#define BASE_PTR m[c->base_ptr]
+#define EXTRACT_SIZE(__x) (3+(c->m[__x+2] & 0x0000FFFF))
+#define GET_PREV(__x, ...) (c->m[__x] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_NAME(__x, ...) (c->m[__x+1] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_HEADER(__x, ...) (c->m[__x+2] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_DATA(__x, ...) (c->m[__x + 3 __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN)])
+#define COMPILE_STATE (c->m[c->compile_state_ptr])
+#define DICTPTR (c->m[c->dict_pos_ptr])
+#define PROGRAM_COUNTER (c->m[c->program_counter_ptr])
+#define EXP_PTR c->m[c->exp_ptr]
+#define BASE_PTR c->m[c->base_ptr]
 
 
 
@@ -59,15 +59,15 @@ static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (
 /* The forth core words: declare a new word, and end it */
 MAKEPRIM(colon) {
     CONSUMER(' ', C_LOR(), , WARNING(colon));
-    makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
+    makeWord(c, lorig, w_size, 0, 0, 0, NULL, 0);
     COMPILE_STATE = 1;
 }
 MAKEPRIM(colonAnon) {
-    makeWord(c, m, (Cell[]){0}, 0, 0, 0, 0, NULL, 0);
+    makeWord(c, (Cell[]){0}, 0, 0, 0, 0, NULL, 0);
     COMPILE_STATE = 1;
-    dataPush(c, m, DICTPTR);
+    dataPush(c, DICTPTR);
 }
-MAKEPRIM(semicolon){ appendWord(c, m, CA(t_end), 1); COMPILE_STATE = 0; }
+MAKEPRIM(semicolon){ appendWord(c, CA(t_end), 1); COMPILE_STATE = 0; }
 /* Comments*/
 /*---------------------------------------------*/
 MAKEPRIM(leftparen) { CONSUMER(')', , c->input++, ); }
@@ -80,121 +80,121 @@ MAKEPRIM(bye) { printf("\nThanks for using nomForth.\n"); exit(0); }
 /*---------------------------------------------*/
 MAKEPRIM(emptyword) {
     CONSUMER(' ', C_LOR(), , WARNING(empty_word));
-    makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
+    makeWord(c, lorig, w_size, 0, 0, 0, NULL, 0);
 }
 MAKEPRIM(create) {
     CONSUMER(' ', C_LOR(), , WARNING(create));
-    makeWord(c, m, lorig, w_size, 0, 0, 0, NULL, 0);
+    makeWord(c, lorig, w_size, 0, 0, 0, NULL, 0);
     Cell curr = DICTPTR;
     GET_HEADER(curr) |= SET_VARIABLE(curr); /*Mark as variable*/
-    appendWord(c, m, CA(t_num, curr+3 + 4), 2); // +3, pointer to first empty cell
-    appendWord(c, m, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
+    appendWord(c, CA(t_num, curr+3 + 4), 2); // +3, pointer to first empty cell
+    appendWord(c, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
 }
-MAKEPRIM(comma) { Cell val = dataPop(c, m); appendWord(c, m, CA(val), 1); }
+MAKEPRIM(comma) { Cell val = dataPop(c); appendWord(c, CA(val), 1); }
 MAKEPRIM(worddoesprim) { // DO NOT CALL THE WORDDOESPRIM C PRIMITIVE DIRECTLY!
     Cell current_word = DICTPTR;
-    Cell pc = funcPeek(c, m);
+    Cell pc = funcPeek(c);
     GET_DATA(current_word, 2) = t_absjump; // replace first dummy END created by VAR with a jump
     GET_DATA(current_word, 3) = pc+2; //replace other dummy END with jump value
 }
 MAKEPRIM(worddoes) {
-    Cell appended_w = findWord(c, m, 'c', "DOES>PRIM", char_strlen("DOES>PRIM"));
-    appendWord(c, m, CA(appended_w), 1);
-    appendWord(c, m, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
+    Cell appended_w = findWord(c, 'c', "DOES>PRIM", char_strlen("DOES>PRIM"));
+    appendWord(c, CA(appended_w), 1);
+    appendWord(c, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
 /* Reading data from the input stream*/
 /*---------------------------------------------*/
 MAKEPRIM(b_char_b) {
     CONSUMER(' ', C_LOR(), , WARNING([char]));
-    appendWord(c, m, CA(t_num, lorig[0]), 2);
+    appendWord(c, CA(t_num, lorig[0]), 2);
 }
 MAKEPRIM(char) {
     CONSUMER(' ', C_LOR(), , WARNING(char));
-    dataPush(c, m, lorig[0]);
+    dataPush(c, lorig[0]);
 }
 MAKEPRIM(word) {
-    CONSUMER((char)dataPop(c, m), C_LOR(), , WARNING(word))
-    Cell created_string = addToPad(c, m, lorig, w_size);
-    dataPush(c, m, created_string);
+    CONSUMER((char)dataPop(c), C_LOR(), , WARNING(word))
+    Cell created_string = addToPad(c, lorig, w_size);
+    dataPush(c, created_string);
 }
 MAKEPRIM(parse) {
-    int w_size = consumeWord(&c->input, c->input_end, (char)dataPop(c, m), 0);
+    int w_size = consumeWord(&c->input, c->input_end, (char)dataPop(c), 0);
     if (w_size < 0) { w_size = -w_size; }
     if (w_size == 0) { WARNING(parse); }
     Cell *lorig = c->input-w_size;
     c->input += 1;
-    Cell created_string = addToPad(c, m, lorig, w_size);
-    dataPush(c, m, created_string);
+    Cell created_string = addToPad(c, lorig, w_size);
+    dataPush(c, created_string);
 }
 MAKEPRIM(parse_name) {
     CONSUMER(' ', C_LOR(), , WARNING(parse_name));
-    Cell created_string = addToPad(c, m, lorig, w_size);
-    dataPush(c, m, created_string);
+    Cell created_string = addToPad(c, lorig, w_size);
+    dataPush(c, created_string);
 }
 MAKEPRIM(find) {
-    Cell obtained_str = dataPop(c, m);
-    Cell found_word = findWord(c, m, 'n', &m[obtained_str+1], m[obtained_str]-1);
-    if (found_word == 0) { dataPush(c, m, obtained_str); dataPush(c, m, 0); }
-    else { dataPush(c, m, found_word); dataPush(c, m, ((m[found_word+2] >> 24) != 0) ? 1 : -1); }
+    Cell obtained_str = dataPop(c);
+    Cell found_word = findWord(c, 'n', &c->m[obtained_str+1], c->m[obtained_str]-1);
+    if (found_word == 0) { dataPush(c, obtained_str); dataPush(c, 0); }
+    else { dataPush(c, found_word); dataPush(c, ((c->m[found_word+2] >> 24) != 0) ? 1 : -1); }
 }
 MAKEPRIM(is) {
     CONSUMER(' ', C_LOR(), , WARNING(is));
-    Cell assigned_word = findWord(c, m, 'n', lorig, w_size);
-    Cell popped_xt = dataPop(c, m);
+    Cell assigned_word = findWord(c, 'n', lorig, w_size);
+    Cell popped_xt = dataPop(c);
     if (EXTRACT_SIZE(assigned_word) - 3 >= 1)
         GET_DATA(assigned_word, 0) = popped_xt;
     else
-        printf("{ERROR: Can't assign to non-deferred word with inappropiate size %u}\n", m[assigned_word]);
+        printf("{ERROR: Can't assign to non-deferred word with inappropiate size %u}\n", c->m[assigned_word]);
 }
 MAKEPRIM(defer) {
     CONSUMER(' ', C_LOR(), , WARNING(defer));
-    makeWord(c, m, lorig, w_size, 0, 0, 0, CA(t_end, t_end), 2);
+    makeWord(c, lorig, w_size, 0, 0, 0, CA(t_end, t_end), 2);
 }
 MAKEPRIM(postpone) {
     CONSUMER(' ', C_LOR(), , WARNING(postpone));
-    Cell found_word = findWord(c, m, 'n', lorig, w_size);
-    appendWord(c, m, CA(found_word), 1);
+    Cell found_word = findWord(c, 'n', lorig, w_size);
+    appendWord(c, CA(found_word), 1);
 }
 MAKEPRIM(save_input){
     R_SAVE();
-    funcPush(c, m, c->input_end-m);
-    funcPush(c, m, c->input_start-m);
-    funcPush(c, m, c->input-m);
+    funcPush(c, c->input_end-c->m);
+    funcPush(c, c->input_start-c->m);
+    funcPush(c, c->input-c->m);
     R_RESTORE();
 }
 
 MAKEPRIM(restore_input){
     R_SAVE();
-    c->input = m+funcPop(c, m);
-    c->input_start = m+funcPop(c, m);
-    c->input_end = m+funcPop(c, m);
+    c->input = c->m+funcPop(c);
+    c->input_start = c->m+funcPop(c);
+    c->input_end = c->m+funcPop(c);
     R_RESTORE();
 }
 
 // execute takes care of restoring the program counter for us
 MAKEPRIM(interpret) {
-    Cell s = dataPop(c, m), adr = dataPop(c, m);
-    interpret(c, m, &m[adr], s, 0);
+    Cell s = dataPop(c), adr = dataPop(c);
+    interpret(c, &c->m[adr], s, 0);
 }
 
 /*Interface to Offset-based allocator in oa.h*/
 /*---------------------------------------------*/
-MAKEPRIM(heap_init){ OA_init(m+c->heap_start, 0x2000); }
+MAKEPRIM(heap_init){ OA_init(c->m+c->heap_start, 0x2000); }
 MAKEPRIM(defrag){ OA_defrag(); }
 MAKEPRIM(allocate){
-    Cell mem = OA_malloc(dataPop(c, m));
+    Cell mem = OA_malloc(dataPop(c));
     mem = (mem == NIL) ? 0 : (mem + c->heap_start);
-    dataPush(c, m, mem);
+    dataPush(c, mem);
 }
-MAKEPRIM(free){ Cell mem = dataPop(c, m); if (mem == 0) return; OA_free(mem - c->heap_start); }
+MAKEPRIM(free){ Cell mem = dataPop(c); if (mem == 0) return; OA_free(mem - c->heap_start); }
 
 /* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
 /*---------------------------------------------*/
-#define INIT(_name) Cell _name = dataPop(c, m);
-#define RINIT(_name) Cell _name = funcPop(c, m);
-#define INIT_I(_name) int32_t _name = dataPop(c, m);
-#define PUSH(...) dataPush(c, m, __VA_ARGS__)
-#define RPUSH(...) funcPush(c, m, __VA_ARGS__)
+#define INIT(_name) Cell _name = dataPop(c);
+#define RINIT(_name) Cell _name = funcPop(c);
+#define INIT_I(_name) int32_t _name = dataPop(c);
+#define PUSH(...) dataPush(c, __VA_ARGS__)
+#define RPUSH(...) funcPush(c, __VA_ARGS__)
 #define OP_UN(_name, ...) MAKEPRIM(_name) { INIT_I(w1); PUSH(__VA_ARGS__); }
 #define OP_BIN(_name, ...) MAKEPRIM(_name) { INIT_I(w2); INIT_I(w1); PUSH(__VA_ARGS__); }
 
@@ -262,27 +262,27 @@ REFF(2, 3, rtuck, w2, w1, w2) // R( w1 w2 -- w2 w1 w2)
 
 /* Memory manipulation, returnstack-datastack interaction */
 /*---------------------------------------------*/
-MAKEPRIM(fetch) { dataPush(c, m, m[dataPop(c, m)]); }
-MAKEPRIM(store) { Cell adr = dataPop(c, m), val = dataPop(c, m); m[adr] = val; }
-MAKEPRIM(rget) { R_SAVE(); funcPush(c, m, dataPop(c, m)); R_RESTORE(); }
-MAKEPRIM(rsend) { R_SAVE(); dataPush(c, m, funcPop(c, m)); R_RESTORE(); }
-MAKEPRIM(2fetch) { Cell adr = dataPop(c, m); dataPush(c, m, m[adr]); dataPush(c, m, m[adr+1]); }
+MAKEPRIM(fetch) { dataPush(c, c->m[dataPop(c)]); }
+MAKEPRIM(store) { Cell adr = dataPop(c), val = dataPop(c); c->m[adr] = val; }
+MAKEPRIM(rget) { R_SAVE(); funcPush(c, dataPop(c)); R_RESTORE(); }
+MAKEPRIM(rsend) { R_SAVE(); dataPush(c, funcPop(c)); R_RESTORE(); }
+MAKEPRIM(2fetch) { Cell adr = dataPop(c); dataPush(c, c->m[adr]); dataPush(c, c->m[adr+1]); }
 MAKEPRIM(2store) {
-    Cell adr = dataPop(c, m), val2 = dataPop(c, m), val1 = dataPop(c, m);
+    Cell adr = dataPop(c), val2 = dataPop(c), val1 = dataPop(c);
     // Yes, they are stored in reverse according to the standard
-    m[adr] = val2;
-    m[adr+1] = val1;
+    c->m[adr] = val2;
+    c->m[adr+1] = val1;
 }
 MAKEPRIM(2rget) {
     R_SAVE();
-    Cell w2 = dataPop(c, m), w1 = dataPop(c, m);
-    funcPush(c, m, w1); funcPush(c, m, w2);
+    Cell w2 = dataPop(c), w1 = dataPop(c);
+    funcPush(c, w1); funcPush(c, w2);
     R_RESTORE();
 }
 MAKEPRIM(2rsend) {
     R_SAVE();
-    Cell w2 = funcPop(c, m), w1 = funcPop(c, m);
-    dataPush(c, m, w1); dataPush(c, m, w2);
+    Cell w2 = funcPop(c), w1 = funcPop(c);
+    dataPush(c, w1); dataPush(c, w2);
     R_RESTORE();
 }
 
@@ -292,7 +292,7 @@ MAKEPRIM(getchar){
     fflush(stdout);
     uint8_t w1 = getchar();
     if (w1 == '\n') w1 = 0;
-    dataPush(c, m, w1);
+    dataPush(c, w1);
     if (w1 == '\n') return;
     else while (getchar() != '\n');
 }
@@ -301,13 +301,13 @@ MAKEPRIM(getnum){
     Cell w1;
     _Bool found = scanf("%d", &w1);
     while (getchar() != '\n');
-    if (found) dataPush(c, m, w1);
-    else       dataPush(c, m, -1);
+    if (found) dataPush(c, w1);
+    else       dataPush(c, -1);
 }
 MAKEPRIM(accept){
     fflush(stdout);
-    Cell size_limit = dataPop(c, m);
-    Cell address = dataPop(c, m);
+    Cell size_limit = dataPop(c);
+    Cell address = dataPop(c);
     char tmp_str[size_limit];
     unsigned i;
     for (i = 0; i < size_limit; i++){
@@ -318,9 +318,9 @@ MAKEPRIM(accept){
     if (i >= size_limit) /*Read and discard until newline*/
         for (int j = i; ; j++) { if (getchar() == '\n') break; }
     for (unsigned k = 0; k < i; k++) {
-        m[address+k] = tmp_str[k];
+        c->m[address+k] = tmp_str[k];
     }
-    dataPush(c, m, i);
+    dataPush(c, i);
 }
 MAKEPRIM(flushoutput){
     fflush(stdout);
@@ -329,75 +329,88 @@ MAKEPRIM(utime){
     struct timeval tv;
     gettimeofday(&tv,NULL);
     uint64_t t = 1000000 * tv.tv_sec + tv.tv_usec;
-    dataPush(c, m, t & 0xFFFFFFFF);
-    dataPush(c, m, t >> 32);
+    dataPush(c, t & 0xFFFFFFFF);
+    dataPush(c, t >> 32);
 }
 MAKEPRIM(emit){
-    unsigned char ch = dataPop(c, m);
+    unsigned char ch = dataPop(c);
     if (ch >= 0x20 && ch <= 0x7E) printf("%c", ch);
     else if (ch == 0x0A)          printf("%c", ch);
     else                          printf("[0x%X]", ch);
 }
 MAKEPRIM(type){
-    Cell size = dataPop(c, m), str = dataPop(c, m);
+    Cell size = dataPop(c), str = dataPop(c);
     if (size == 0) printf("[EMPTY_STR]");
     for (unsigned i = 0; i < size; i++) {
-        printf("%c", (unsigned char)m[str+i]);
+        printf("%c", (unsigned char)c->m[str+i]);
     }
 }
 MAKEPRIM(cr) { printf("\n"); }
 MAKEPRIM(spaces) {
-    Cell x = dataPop(c, m);
+    Cell x = dataPop(c);
     for (unsigned i = 0; i < x; i++) {
         printf(" ");
     }
 }
-MAKEPRIM(dot) { printf(" %d", dataPop(c, m)); }
-MAKEPRIM(ddot) { printf(" %ld", ((int64_t)dataPop(c, m) << 32) + (uint32_t)dataPop(c, m)); }
-MAKEPRIM(udot) { printf(" %u", dataPop(c, m)); }
-MAKEPRIM(xdot) { printf(" %08X", dataPop(c, m)); }
+MAKEPRIM(dot) { printf(" %d", dataPop(c)); }
+MAKEPRIM(ddot) { printf(" %ld", ((int64_t)dataPop(c) << 32) + (uint32_t)dataPop(c)); }
+MAKEPRIM(udot) { printf(" %u", dataPop(c)); }
+MAKEPRIM(xdot) { printf(" %08X", dataPop(c)); }
+
+void printMemory(Ctx *c, unsigned start, unsigned increment, unsigned maxval) {
+    for(unsigned i = start; i < maxval; i += increment) {
+        printf("0x%4X:", i);
+        for (unsigned j = i; j < i+increment; j++) {
+            // Colour non-zero cells
+            if (c->m[j] != 0) printf(" \033[30;41m%08X\033[0m", c->m[j]);
+            else           printf(           " %08X",        c->m[j]);
+        }
+        printf("\n");
+    }
+}
+
 MAKEPRIM(dotmem) {
-    Cell end = dataPop(c, m), step = dataPop(c, m), start = dataPop(c, m);
-    printMemory(m, start, step, end);
+    Cell end = dataPop(c), step = dataPop(c), start = dataPop(c);
+    printMemory(c, start, step, end);
 }
 MAKEPRIM(dotstack) {
-    unsigned stacksize = m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));
+    unsigned stacksize = c->m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));
     printf(" | s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %d", m[MEM_START(c->dstack_ptr)+i]);
+        printf(" %d", c->m[MEM_START(c->dstack_ptr)+i]);
     }
     printf(" |");
 }
 MAKEPRIM(udotstack) {
-    unsigned stacksize = m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));
+    unsigned stacksize = c->m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));
     printf(" | s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %u", m[MEM_START(c->dstack_ptr)+i]);
+        printf(" %u", c->m[MEM_START(c->dstack_ptr)+i]);
     }
     printf(" |");
 }
 MAKEPRIM(dotstackret) {
     R_SAVE();
-    unsigned stacksize = m[c->fstack_ptr]-(MEM_START(c->fstack_ptr));
+    unsigned stacksize = c->m[c->fstack_ptr]-(MEM_START(c->fstack_ptr));
     printf(" R| s <%d>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %d", m[MEM_START(c->fstack_ptr)+i]);
+        printf(" %d", c->m[MEM_START(c->fstack_ptr)+i]);
     }
     printf(" |");
     R_RESTORE();
 }
 MAKEPRIM(udotstackret) {
-    unsigned stacksize = m[c->fstack_ptr]-(MEM_START(c->fstack_ptr));
+    unsigned stacksize = c->m[c->fstack_ptr]-(MEM_START(c->fstack_ptr));
     printf(" R| s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
-        printf(" %u", m[MEM_START(c->fstack_ptr)+i]);
+        printf(" %u", c->m[MEM_START(c->fstack_ptr)+i]);
     }
     printf(" |");
 }
 
 MAKEPRIM(ummod) {
-    uint64_t a = dataPop(c, m);
-    uint64_t b = (uint64_t)((uint64_t)dataPop(c, m) << 32) + (uint64_t)dataPop(c, m);
-    dataPush(c, m, b % a);
-    dataPush(c, m, b / a);
+    uint64_t a = dataPop(c);
+    uint64_t b = (uint64_t)((uint64_t)dataPop(c) << 32) + (uint64_t)dataPop(c);
+    dataPush(c, b % a);
+    dataPush(c, b / a);
 }

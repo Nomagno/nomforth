@@ -10,7 +10,7 @@ There is no native file I/O at the moment. Because of this, a script called `run
 
 To test out a full example, run `sh runhelper.sh forth_libs/bootstrap.fs forth_libs/utilities.fs forth_libs/disassembler.fs examples/example.fs`
 
-You can use `HEX 10 FFFF 0 m. DECIMAL` at any point to get a memory dump of the first 64KiBs of the VM. There are only 32-bit cells, and no native byte-level access facilities are provided. Apart from traditional forth words like `MARKER`, for dynamic memory management the primitives `ALLOCATE` and `FREE` are provided for a simple heap.
+You can use `HEX 0 10 FFFF m. DECIMAL` at any point to get a memory dump of the first 64KiBs of the VM. There are only 32-bit cells, and no native byte-level access facilities are provided. Apart from traditional forth words like `MARKER`, for dynamic memory management the primitives `ALLOCATE` and `FREE` are provided for a simple heap.
 
 The nomenclature for memory regions is a bit different: all strings are by default (unless somehow transferred with a custom-made word that contains `MOVE` and decrements the pad pointer) stored in a section known as the pad, that works with a regular arena allocator juts like the Forth dictionary itself. What regular Forth implementations call the scratch-pad, what is called here the "user memory", is a region of memory that the programmer can use however they want and that the "standard library" vows never to manipulate. It starts at the address returned by `USERMEM`
 

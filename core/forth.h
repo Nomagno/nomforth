@@ -73,10 +73,12 @@ typedef struct {
     Cell exp_ptr;
     Cell compile_state_ptr;
     Cell program_counter_ptr;
+
+    Cell *m;
 } Ctx;
 
 #define PRIM_NUM 256
-typedef void(*forthFunc)(Ctx*,Cell*);
+typedef void(*forthFunc)(Ctx*);
 typedef struct {
     forthFunc func;
     _Bool priority;
@@ -112,31 +114,30 @@ extern PrimitiveData primTable[PRIM_NUM];
 
 #define CA(...) (Cell[]){__VA_ARGS__}
 
-void dataPush(Ctx *c, Cell *m, Cell v);
-Cell dataPop(Ctx *c, Cell *m);
-Cell dataPeek(Ctx *c, Cell *m);
-void funcPush(Ctx *c, Cell *m, Cell v);
-Cell funcPop(Ctx *c, Cell *m);
-Cell funcPeek(Ctx *c, Cell *m);
+void dataPush(Ctx *c, Cell v);
+Cell dataPop(Ctx *c);
+Cell dataPeek(Ctx *c);
+void funcPush(Ctx *c, Cell v);
+Cell funcPop(Ctx *c);
+Cell funcPeek(Ctx *c);
 
-Cell addToPad(Ctx *c, Cell *m, Cell *s, unsigned name_size);
-void makeWord(Ctx *c, Cell *m, Cell *name, unsigned name_size, _Bool p, _Bool forbid_tco,
+Cell addToPad(Ctx *c, Cell *s, unsigned name_size);
+void makeWord(Ctx *c, Cell *name, unsigned name_size, _Bool p, _Bool forbid_tco,
               _Bool forbid_interpreting, Cell *data, unsigned data_size);
-Cell appendWord(Ctx *c, Cell *m, Cell *data, Cell data_size);
-Cell findWord(Ctx *c, Cell *m, char strtype, void *s, unsigned s_size);
+Cell appendWord(Ctx *c, Cell *data, Cell data_size);
+Cell findWord(Ctx *c, char strtype, void *s, unsigned s_size);
 
-void executePrimitive(Ctx *c, Cell *m, Cell id);
-void executeWord(Ctx *c, Cell *m, Cell w);
+void executePrimitive(Ctx *c, Cell id);
+void executeWord(Ctx *c, Cell w);
 int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_leading);
-int interpret(Ctx *c, Cell *m, Cell *l, unsigned l_size, _Bool silent);
+int interpret(Ctx *c, Cell *l, unsigned l_size, _Bool silent);
 
-void init(Ctx *c, Cell *m);
-void initPrimitives(Ctx *c, Cell *m);
-void printMemory(Cell *m, unsigned start, unsigned maxval, unsigned increment);
+void init(Ctx *c);
+void initPrimitives(Ctx *c);
 
-void repl(Ctx *c, Cell *m);
+void repl(Ctx *c);
 
-#define MAKEPRIM(x) void prim_##x(Ctx *c, Cell *m)
+#define MAKEPRIM(x) void prim_##x(Ctx *c)
 #define PRIM(x) prim_##x
 
 #define BOOL(x) (x ? ((Cell)-1) : 0)
