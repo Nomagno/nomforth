@@ -3,7 +3,6 @@
 ( MIT License )
 
 ( Build the regular forth language, smoothing out inconsistencies)
-( Note this only builds a barebones core, also include utilities.fs for a usable language)
 
 : DICT_CURRENT ( -- current_dictionary_word_start)
     ( We can not do this because we do not have the word defined yet:)
@@ -322,6 +321,13 @@ DECIMAL
     C_T_E ,
 ;
 
+
+( Make sure to initialize the heap)
+HEAP_INIT
+
+\ This is the end of the bootstrapping, now we build some utility functions.
+
+
 : EVALUATE SAVE-INPUT INTERPRET RESTORE-INPUT ;
 
 ( -- n, where n is 0 if an invalid character was entered,
@@ -329,5 +335,64 @@ DECIMAL
 : GETLETTER GETC DUP DUP [CHAR] a >= SWAP [CHAR] z <= AND IF [char] a - 1 + ELSE DROP 0 THEN ;
 : GETNUMBER GETN ;
 
-( Make sure to initialize the heap)
-HEAP_INIT
+
+: BETWEEN ( x1 x2 x3 -- B)
+  ( if x1 is between x2 and x3, both included, leave -1 on the stack, else leave 0)
+  >R
+  2DUP >=
+  NIP
+  R> SWAP >R
+  <=
+  R> AND
+;
+
+: BEGIN-STRUCTURE ( -- addr 0 ; Exec -- size )
+    CREATE
+    HERE 0 0 , ( Mark stack, put down empty value )
+    DOES> @   ( -- record-length )
+;
+: FIELD: ( addr n <"name"> -- addr ; Exec: addr -- 'addr )
+    CREATE OVER , +
+    DOES> @ +
+;
+: END-STRUCTURE ( addr n -- )
+    SWAP !      ( set len )
+;
+
+: BOOL_NORM LOGICAL_NOT LOGICAL_NOT ;
+: -ROT ROT ROT ;
+
+
+\ This section exists for standard forth compatibility
+: <> != ;
+: 2/ 2 / ;
+: 1+ 1 + ;
+: 1- 1 - ;
+: 0= 0 = ;
+: c! ! ;
+: c@ @ ;
+: invert bitwise_not ;
+: r@ r>  rdup r>  swap >r ; forbid_tco
+: char+ 1 + ;
+: u< < ;
+: invert BITWISE_NOT ;
+: negate ARITHMETICAL_NOT ;
+
+: CELLS ;
+: CELL 1 ;
+: CELL+ 1 + ;
+: NOOP ;
+: COMPILE, , ;
+: ALIGN ;
+
+
+: PICK ( x0 i*x u.i -- x0 i*x x0 )
+  dup 0 = if drop dup exit then  swap >r 1 - recurse r> swap
+;
+
+: ROLL ( x0 i*x u.i -- i*x x0 )
+  dup 0 = if drop exit then  swap >r 1 - recurse r> swap
+;
+
+( adr -- , deletes all scratch pad entries starting from the selected address, by resetting the pad pointer)
+: RESET_PAD_TO C_PAD_ADR ! ;

@@ -2,65 +2,8 @@
 ( Copyright 2025 Nomagno )
 ( MIT License )
 
-( Makes nomforth usable by adding everything from looping constructs )
-( to anonymous functions to case statements to words with local variables )
-
-\ This whole prelude exists for gforth compatibility only
-: <> != ;
-: 2/ 2 / ;
-: 1+ 1 + ;
-: 1- 1 - ;
-: 0= 0 = ;
-: c! ! ;
-: c@ @ ;
-: invert bitwise_not ;
-: r@ r>  rdup r>  swap >r ; forbid_tco
-: char+ 1 + ;
-: u< < ;
-: invert BITWISE_NOT ;
-: negate ARITHMETICAL_NOT ;
-
-: CELLS ;
-: CELL 1 ;
-: CELL+ 1 + ;
-: NOOP ;
-: COMPILE, , ;
-: ALIGN ;
-
-: -ROT ROT ROT ;
-
-: PICK ( x0 i*x u.i -- x0 i*x x0 )
-  dup 0 = if drop dup exit then  swap >r 1 - recurse r> swap
-;
-
-: ROLL ( x0 i*x u.i -- i*x x0 )
-  dup 0 = if drop exit then  swap >r 1 - recurse r> swap
-;
-
-: BETWEEN ( x1 x2 x3 -- B)
-  ( if x1 is between x2 and x3, both included, leave -1 on the stack, else leave 0)
-  >R
-  2DUP >=
-  NIP
-  R> SWAP >R
-  <=
-  R> AND
-;
-
-: BOOL_NORM LOGICAL_NOT LOGICAL_NOT ;
-
-: BEGIN-STRUCTURE ( -- addr 0 ; Exec -- size )
-    CREATE
-    HERE 0 0 , ( Mark stack, put down empty value )
-    DOES> @   ( -- record-length )
-;
-: FIELD: ( addr n <"name"> -- addr ; Exec: addr -- 'addr )
-    CREATE OVER , +
-    DOES> @ +
-;
-: END-STRUCTURE ( addr n -- )
-    SWAP !      ( set len )
-;
+( Makes nomforth usable by adding: )
+( double integer, string pad control, string functions, abort, second-class anonymous functions, pseudo-locals...)
 
 : tri_less ( x y z -- z < x && z < y )
     dup rot < -rot swap < and ;
@@ -90,9 +33,6 @@
   @ DUP 0 SWAP !
   1 + SWAP !
 ;
-
-( adr -- , deletes all scratch pad entries starting from the selected address, by resetting the pad pointer)
-: RESET_PAD_TO C_PAD_ADR ! ;
 
 : p" [CHAR] " PARSE ;
 : [p"] p" LIT, ; immediate
