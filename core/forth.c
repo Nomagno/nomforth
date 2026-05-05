@@ -12,7 +12,7 @@
 static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
 static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
 
-#define SCHECK(__var, __message) if (c->m[__var] == MEM_START(__var)) { printf("{%s stack underflow. ABORTING", __message); exit(1); }
+#define SCHECK(__var, __message) if (c->m[__var] == MEM_START(__var)) { printf("{%s stack underflow. ABORTING}", __message); exit(1); }
 
 void dataPush(Ctx *c, Cell v) { c->m[c->m[c->dstack_ptr]] = v;  c->m[c->dstack_ptr] += 1; }
 void funcPush(Ctx *c, Cell v) { c->m[c->m[c->fstack_ptr]] = v;  c->m[c->fstack_ptr] += 1; }
@@ -273,15 +273,19 @@ int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_lead
     if (now > max) return -(now-orig);
     else return (now-orig);
 }
-int interpret(Ctx *c, Cell *l, unsigned l_size, _Bool silent) {
-    _Bool l_c = 1;
+int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
+    _Bool do_continue = 1;
     _Bool was_there_error = 0;
-    c->input_start = l;
-    c->input_end = l+l_size-1;
-    c->input = l;
-    while(l_c) {
+    c->input_start = src_start;
+    c->input_end = c->input_start+src_size-1;
+    c->input = src_start;
+    while(do_continue) {
         int w_size = consumeWord(&c->input, c->input_end, ' ', 1);
-        if (w_size < 0) { l_c = 0; w_size = -w_size; } else
+
+        // This word is the last of the line, take absolute value to ake its length
+        if (w_size < 0) { do_continue = 0; w_size = -w_size; }
+
+        // No more characters available
         if (w_size == 0) break;
 
         Cell *lorig = c->input-w_size;
@@ -296,16 +300,18 @@ int interpret(Ctx *c, Cell *l, unsigned l_size, _Bool silent) {
             _Bool allow_interpreting = CHECK_NO_WARN(GET_HEADER(w));
             if (priority || COMPILE_STATE == 0) {
                 if (priority && !allow_interpreting && COMPILE_STATE == 0) {
-                    printf("{WARNING: SHOULD NOT INTERPRET COMPILE-ONLY WORD ");
+                    printf("{ERROR: CAN NOT INTERPRET COMPILE-ONLY WORD ");
                     for (int i = 0; i < w_size; i++)
                         printf("%c", lorig[i]);
                     printf("}\n");
+                    do_continue = 0;
+                    was_there_error = 1;
+                } else {
+                    // Mark that lets the inner interpreter know
+                    //  it's going back to the outer interpreter
+                    funcPush(c, 0);
+                    executeWord(c, w);
                 }
-
-                // Mark that lets the inner interpreter know
-                //  it's going back to the outer interpreter
-                funcPush(c, 0);
-                executeWord(c, w);
             } else {
                 dataPush(c, w);
                 PRIM(comma)(c);
@@ -337,7 +343,7 @@ int interpret(Ctx *c, Cell *l, unsigned l_size, _Bool silent) {
             Cell val = strtol(tmpstring, &endptr, BASE_PTR);
             int converted_num_size = endptr-tmpstring;
 
-            if (l_c != 0) *c->input = ' ';
+            if (do_continue != 0) *c->input = ' ';
 
             if (valid_dot && converted_num_size == w_size) {
                 if (COMPILE_STATE == 0)
@@ -354,7 +360,7 @@ int interpret(Ctx *c, Cell *l, unsigned l_size, _Bool silent) {
                 for (int i = 0; i < w_size + (pos > 0); i++)
                     printf("%c", lorig[i]);
                 printf("}\n");
-                l_c = 0;
+                do_continue = 0;
                 was_there_error = 1;
             }
         }
