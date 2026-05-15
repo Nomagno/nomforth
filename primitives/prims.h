@@ -18,6 +18,8 @@ MAKEPRIM(create);
 MAKEPRIM(comma);
 MAKEPRIM(worddoesprim);
 MAKEPRIM(worddoes);
+MAKEPRIM(getffi);
+MAKEPRIM(callffi);
 
 MAKEPRIM(fetch);
 MAKEPRIM(store);
@@ -140,6 +142,9 @@ MAKEPRIM(rtuck);
     {PRIM(comma),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ","},         \
     {PRIM(worddoesprim),    NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "DOES>PRIM"}, \
     {PRIM(worddoes),     IMMEDIATE_WORD,  ALLOW_TCO, DISALLOW_INTERPRET, "DOES>"},     \
+    {PRIM(getffi),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "getffi"}, \
+    {PRIM(callffi),         NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "callffi"},     \
+    /*Need to forbid TCO for callffi so that callees can expect to have their own 'personal' address on the return stack consistently*/ \
                                                                                        \
     {PRIM(fetch),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "@"},         \
     {PRIM(store),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "!"},         \

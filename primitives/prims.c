@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#define _GNU_SOURCE
+#include <dlfcn.h>
 #include "prims.h"
 
 #define D_SAVE() Cell saved_d = dataPop(c)
@@ -102,6 +104,25 @@ MAKEPRIM(worddoes) {
     appendWord(c, CA(appended_w), 1);
     appendWord(c, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
+MAKEPRIM(getffi) {
+    CONSUMER(' ', C_LOR(), , WARNING(getffi));
+    char tmp_str[w_size+1];
+    for (int i = 0; i < w_size; i++) {
+        tmp_str[i] = lorig[i];
+    }
+    tmp_str[w_size] = '\0';
+    dataPush(c, (uintptr_t)dlsym(RTLD_DEFAULT, tmp_str));
+}
+
+// nomforth must be compiled as 32-bit for callffi specifically to work properly
+typedef Cell (*nomforth_func)(Ctx *);
+MAKEPRIM(callffi) {
+    nomforth_func func = (nomforth_func)dataPop(c);
+    Cell return_code = func(c);
+    // TODO: do something with the return code
+}
+
+
 /* Reading data from the input stream*/
 /*---------------------------------------------*/
 MAKEPRIM(b_char_b) {
@@ -353,7 +374,7 @@ MAKEPRIM(spaces) {
     }
 }
 MAKEPRIM(dot) { printf(" %d", dataPop(c)); }
-MAKEPRIM(ddot) { printf(" %ld", ((int64_t)dataPop(c) << 32) + (uint32_t)dataPop(c)); }
+MAKEPRIM(ddot) { printf(" %lld", ((int64_t)dataPop(c) << 32) + (uint32_t)dataPop(c)); }
 MAKEPRIM(udot) { printf(" %u", dataPop(c)); }
 MAKEPRIM(xdot) { printf(" %08X", dataPop(c)); }
 
