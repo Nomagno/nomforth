@@ -1,6 +1,8 @@
 # Replace PWD with the absolute location of the nomforth source to make this into a relocatable script
 export NFPATH=$PWD/
 export N=$NFPATH
+
+# install package gcc-multilib
 gcc -o fex -g -m32 -rdynamic -ldl \
         $N/core/forth.c \
         $N/primitives/prims.c \

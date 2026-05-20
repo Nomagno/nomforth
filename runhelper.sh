@@ -1,6 +1,6 @@
 #!/bin/sh
 # When we run kill 0 from a subshell, we will kill the entire process group of this script
-trap "kill 0" SIGINT
+trap "kill 0" INT
 
 silent_mode=$(mktemp);
 verbose_mode=$(mktemp);
@@ -10,7 +10,7 @@ verbose_mode=$(mktemp);
 printf '6 DUP @ 1 1 LSHIFT OR SWAP !\n' > $silent_mode
 
 printf "\n..verbose\n" > $verbose_mode
-cat $@
+# cat $@
 echo Prepending the files: $@
 echo _______________________
 # The trap at the start of the file is used to kill cat from within the right side of this pipe
