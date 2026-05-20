@@ -31,30 +31,6 @@ PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
     post_action
 
 
-#define SET_VARIABLE(__x) (__x << 31)
-#define SET_NO_TCO(__x) (__x << 30)
-#define SET_NO_WARN(__x) (__x << 29)
-#define SET_IMM(__x) (__x << 28)
-#define CHECK_VARIABLE(__x) ((__x >> 31) & 1)
-#define CHECK_NO_TCO(__x) ((__x >> 30) & 1)
-#define CHECK_NO_WARN(__x) ((__x >> 29) & 1)
-#define CHECK_IMM(__x) ((__x >> 28) & 1)
-
-#define LPAREN (
-#define RPAREN )
-#define EXTRACT_SIZE(__x) (3+(c->m[__x+2] & 0x0000FFFF))
-#define GET_PREV(__x, ...) (c->m[__x] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_NAME(__x, ...) (c->m[__x+1] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_HEADER(__x, ...) (c->m[__x+2] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_DATA(__x, ...) (c->m[__x + 3 __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN)])
-#define COMPILE_STATE (c->m[c->compile_state_ptr])
-#define DICTPTR (c->m[c->dict_pos_ptr])
-#define PROGRAM_COUNTER (c->m[c->program_counter_ptr])
-#define EXP_PTR c->m[c->exp_ptr]
-#define BASE_PTR c->m[c->base_ptr]
-
-
-
 static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
 static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
 
@@ -62,14 +38,16 @@ static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (
 MAKEPRIM(colon) {
     CONSUMER(' ', C_LOR(), , WARNING(colon));
     makeWord(c, lorig, w_size, 0, 0, 0, NULL, 0);
+    GET_NAME(DICTPTR) |= (1 << 31); // fudge header
     COMPILE_STATE = 1;
 }
 MAKEPRIM(colonAnon) {
     makeWord(c, (Cell[]){0}, 0, 0, 0, 0, NULL, 0);
+    GET_NAME(DICTPTR) |= (1 << 31); // fudge header
     COMPILE_STATE = 1;
     dataPush(c, DICTPTR);
 }
-MAKEPRIM(semicolon){ appendWord(c, CA(t_end), 1); COMPILE_STATE = 0; }
+MAKEPRIM(semicolon){ appendWord(c, CA(t_end), 1); COMPILE_STATE = 0; GET_NAME(DICTPTR) &= ~0x80000000;/*unfudge header*/  }
 /* Comments*/
 /*---------------------------------------------*/
 MAKEPRIM(leftparen) { CONSUMER(')', , c->input++, ); }
@@ -88,7 +66,7 @@ MAKEPRIM(create) {
     CONSUMER(' ', C_LOR(), , WARNING(create));
     makeWord(c, lorig, w_size, 0, 0, 0, NULL, 0);
     Cell curr = DICTPTR;
-    GET_HEADER(curr) |= SET_VARIABLE(curr); /*Mark as variable*/
+    GET_HEADER(curr) |= SET_VARIABLE(1); /*Mark as variable*/
     appendWord(c, CA(t_num, curr+3 + 4), 2); // +3, pointer to first empty cell
     appendWord(c, CA(t_end, t_end), 2); // +5, Two ends to be replaced by an absolute jump
 }
@@ -377,6 +355,8 @@ MAKEPRIM(dot) { printf(" %d", dataPop(c)); }
 MAKEPRIM(ddot) { printf(" %lld", ((int64_t)dataPop(c) << 32) + (uint32_t)dataPop(c)); }
 MAKEPRIM(udot) { printf(" %u", dataPop(c)); }
 MAKEPRIM(xdot) { printf(" %08X", dataPop(c)); }
+
+MAKEPRIM(at_xy) { printf("\x1b[%u;%uH", dataPop(c), dataPop(c)); }
 
 void printMemory(Ctx *c, unsigned start, unsigned increment, unsigned maxval) {
     for(unsigned i = start; i < maxval; i += increment) {

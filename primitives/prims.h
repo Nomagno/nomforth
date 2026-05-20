@@ -81,6 +81,7 @@ MAKEPRIM(dot);
 MAKEPRIM(ddot);
 MAKEPRIM(udot);
 MAKEPRIM(xdot);
+MAKEPRIM(at_xy);
 MAKEPRIM(dotmem);
 MAKEPRIM(dotstack);
 MAKEPRIM(udotstack);
@@ -206,6 +207,7 @@ MAKEPRIM(rtuck);
     {PRIM(ddot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "D."},        \
     {PRIM(udot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "U."},        \
     {PRIM(xdot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "X."},        \
+    {PRIM(at_xy),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "AT-XY"},     \
     {PRIM(dotmem),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "M."},        \
     {PRIM(dotstack),        NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ".S"},        \
     {PRIM(udotstack),       NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "U.S"},       \

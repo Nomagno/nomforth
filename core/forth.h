@@ -144,4 +144,28 @@ void repl(Ctx *c);
 
 #include "../primitives/prims.h"
 
+
+
+#define SET_VARIABLE(__x) (__x << 31)
+#define SET_NO_TCO(__x) (__x << 30)
+#define SET_NO_WARN(__x) (__x << 29)
+#define SET_IMM(__x) (__x << 28)
+#define CHECK_VARIABLE(__x) ((__x >> 31) & 1)
+#define CHECK_NO_TCO(__x) ((__x >> 30) & 1)
+#define CHECK_NO_WARN(__x) ((__x >> 29) & 1)
+#define CHECK_IMM(__x) ((__x >> 28) & 1)
+
+#define LPAREN (
+#define RPAREN )
+#define EXTRACT_SIZE(__x) (3+(c->m[__x+2] & 0x0000FFFF))
+#define GET_PREV(__x, ...) (c->m[__x] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_NAME(__x, ...) (c->m[__x+1] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_HEADER(__x, ...) (c->m[__x+2] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
+#define GET_DATA(__x, ...) (c->m[__x + 3 __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN)])
+#define COMPILE_STATE (c->m[c->compile_state_ptr])
+#define DICTPTR (c->m[c->dict_pos_ptr])
+#define PROGRAM_COUNTER (c->m[c->program_counter_ptr])
+#define EXP_PTR c->m[c->exp_ptr]
+#define BASE_PTR c->m[c->base_ptr]
+
 #endif

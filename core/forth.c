@@ -33,29 +33,6 @@ Cell addToPad(Ctx *c, Cell *s, unsigned name_size) {
     return str_loc;
 }
 
-#define SET_VARIABLE(__x) (__x << 31)
-#define SET_NO_TCO(__x) (__x << 30)
-#define SET_NO_WARN(__x) (__x << 29)
-#define SET_IMM(__x) (__x << 28)
-#define CHECK_VARIABLE(__x) ((__x >> 31) & 1)
-#define CHECK_NO_TCO(__x) ((__x >> 30) & 1)
-#define CHECK_NO_WARN(__x) ((__x >> 29) & 1)
-#define CHECK_IMM(__x) ((__x >> 28) & 1)
-
-#define LPAREN (
-#define RPAREN )
-#define EXTRACT_SIZE(__x) (3+(c->m[__x+2] & 0x0000FFFF))
-#define GET_PREV(__x, ...) (c->m[__x] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_NAME(__x, ...) (c->m[__x+1] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_HEADER(__x, ...) (c->m[__x+2] __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN))
-#define GET_DATA(__x, ...) (c->m[__x + 3 __VA_OPT__(+) __VA_OPT__(LPAREN) __VA_ARGS__ __VA_OPT__(RPAREN)])
-#define COMPILE_STATE (c->m[c->compile_state_ptr])
-#define DICTPTR (c->m[c->dict_pos_ptr])
-#define PROGRAM_COUNTER (c->m[c->program_counter_ptr])
-#define EXP_PTR c->m[c->exp_ptr]
-#define BASE_PTR c->m[c->base_ptr]
-
-
 void makeWord(Ctx *c, Cell *name, unsigned name_size,
               _Bool p, _Bool forbid_tco, _Bool allow_interpret, Cell *data, unsigned data_size) {
     Cell prev = DICTPTR;
@@ -83,22 +60,24 @@ Cell appendWord(Ctx *c, Cell *data, unsigned data_size) {
 }
 
 // Just to avoid pasting the same code twice
-#define INSTANCE_FIND_WORD(__x) \
-__x *n = (__x *)s;\
+#define INSTANCE_FIND_WORD(__type) \
+__type *n = (__type *)s;\
 if (s_size == 0) return 0;\
 _Bool condition = 1;\
 Cell curr = DICTPTR;\
 while (condition) {\
     Cell temp_str = GET_NAME(curr);\
+    if (temp_str == 0 || (temp_str & (1 << 31)) != 0) { goto skip_##__type; }\
     Cell temp_str_size = c->m[temp_str] - 1;\
     unsigned i;\
     _Bool are_equal = 1;\
     if (s_size != temp_str_size) are_equal = 0;\
     for (i = 0; i < s_size && are_equal; i++) {\
-        if (toupper(c->m[temp_str+1+i]) != toupper((__x)n[i])) are_equal = 0;\
+        if (toupper(c->m[temp_str+1+i]) != toupper((__type)n[i])) are_equal = 0;\
     }\
     if (are_equal && (i == s_size)) condition = 0;\
     else {\
+        skip_##__type:\
         if (GET_PREV(curr) == 0) return 0;\
         else curr = GET_PREV(curr);\
     }\
