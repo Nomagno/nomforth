@@ -74,6 +74,7 @@ MAKEPRIM(geq);
 
 MAKEPRIM(utime);
 MAKEPRIM(emit);
+MAKEPRIM(safe_emit);
 MAKEPRIM(type);
 MAKEPRIM(cr);
 MAKEPRIM(spaces);
@@ -200,6 +201,7 @@ MAKEPRIM(rtuck);
                                                                                        \
     {PRIM(utime),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "UTIME"},     \
     {PRIM(emit),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "EMIT"},      \
+    {PRIM(safe_emit),       NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "SAFE_EMIT"}, \
     {PRIM(type),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "TYPE"},      \
     {PRIM(cr),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "CR"},        \
     {PRIM(spaces),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "SPACES"},    \

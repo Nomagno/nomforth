@@ -75,6 +75,10 @@
     THEN
 ; immediate allow_interpret
 
+\ Clears screen
+: CLEAR 27 emit ." [1J" ;
+: PAGE CLEAR 0 0 at-xy ;
+
 : FILL ( c-char u char -- ) ROT ROT 0 ?DO 2DUP ! 1 + LOOP 2DROP ;
 : MOVE ( addr1 addr2 u -- )
     ( copies u cells starting from address 1 intro address 2)

@@ -335,6 +335,10 @@ MAKEPRIM(utime){
 }
 MAKEPRIM(emit){
     unsigned char ch = dataPop(c);
+    printf("%c", ch);
+}
+MAKEPRIM(safe_emit){
+    unsigned char ch = dataPop(c);
     if (ch >= 0x20 && ch <= 0x7E) printf("%c", ch);
     else if (ch == 0x0A)          printf("%c", ch);
     else                          printf("[0x%X]", ch);
