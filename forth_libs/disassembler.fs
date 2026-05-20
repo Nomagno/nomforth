@@ -10,7 +10,7 @@
 ;
 
 : PRINTNEXT ( adr -- , prints values pointed to by next cell) 1 + @ . ;
-: PRINTWORD ( xt -- , prints name of represented by xt) DUP >NAME DUP 0 = IF DROP STRLIT" (UNNAMED)" X. ELSE COUNT TYPE DROP THEN ;
+: PRINTWORD ( xt -- , prints name of represented by xt) DUP >NAME DUP 0 = IF DROP ." (UNNAMED)" X. ELSE COUNT TYPE DROP THEN ;
 
 : TABS 2 * SPACES ;
 : GEO_RECIP ( n m -- x )
@@ -27,7 +27,7 @@
 
 : XT-SEE ( xt -- )
     DUP 0 = IF
-        STRLIT" WORD NOT FOUND"
+        ." WORD NOT FOUND"
         DROP
         EXIT
     THEN
@@ -36,54 +36,54 @@
     0 SWAP ( set-up indentation )
 
     DUP ISVAR IF
-        STRLIT" Variable " DUP PRINTWORD
-        STRLIT" , data size" DUP >SIZE . CR
+        ." Variable " DUP PRINTWORD
+        ." , data size" DUP >SIZE . CR
 
-        STRLIT" Data starts at address: 0x"
+        ." Data starts at address: 0x"
         DUP DASM_GET_VSTART X. CR
 
         1 TABS
         DUP DASM_GET_VJUMP CASE
-            C_T_E      OF STRLIT" No special execution behaviour has been defined" CR ENDOF
-            C_T_ABSJMP OF STRLIT" Code at address 0x" DUP DASM_GET_VCODE X. CR ENDOF
-            STRLIT" This variable is not following the standard variable format, weird" CR
+            C_T_E      OF ." No special execution behaviour has been defined" CR ENDOF
+            C_T_ABSJMP OF ." Code at address 0x" DUP DASM_GET_VCODE X. CR ENDOF
+            ." This variable is not following the standard variable format, weird" CR
         ENDCASE
 
         1 TABS
-        STRLIT" Data dump of var:" CR
+        ." Data dump of var:" CR
 
         DUP >SIZE 0 ?DO
             2 TABS
             DUP I  4 +  3 +   + ( get ivar and add it to current XT )
-            STRLIT" 0x" @ X. CR
+            ." 0x" @ X. CR
         LOOP
     ELSE
-        STRLIT" : "
+        ." : "
         DUP >NAME COUNT TYPE CR
         DUP RAW_VAR_SIZE 3 - 0 ?DO
             1 TABS
-            STRLIT" ["
+            ." ["
                 I .
                 I COUNT_DIGITS 4 GEO_RECIP SPACES ( Pad up to 4 spaces )
-            STRLIT" ]"
+            ." ]"
             SWAP DUP TABS SWAP ( Appropiate indentation level for actual code shown)
 
             DUP I 3 + + ( get ivar and add it to current XT )
             DUP @ CASE
-                C_T_UNKNOWN OF STRLIT" UNKNOWN" CR ENDOF
-                C_T_NOP     OF STRLIT" NO-OP" CR ENDOF
-                C_T_PRIM    OF 1 +i STRLIT" PRIMITIVE:" DUP PRINTNEXT CR ENDOF
-                C_T_NUM     OF 1 +i STRLIT" NUMBER:" DUP PRINTNEXT CR ENDOF
-                C_T_RJMP    OF 1 +i STRLIT" JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_RBJMP   OF 1 +i STRLIT" JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_CRJMP   OF 1 +i STRLIT" COND JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_CRBJMP  OF 1 +i STRLIT" COND JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
-                C_T_ABSJMP  OF 1 +i STRLIT" ABSOLUTE JUMP TO:" DUP PRINTNEXT CR ENDOF
-                C_T_L       OF STRLIT" LEAVE LABEL, THIS IS PROBABLY AN ERROR/BUG" CR ENDOF
-                C_T_E       OF STRLIT" RETURN" CR ENDOF
-                C_T_E_NTC   OF STRLIT" RETURN (no tail recursion allowed)" CR ENDOF
-                C_T_EXEC    OF STRLIT" EXECUTE WORD FROM STACK" CR ENDOF
-                DUP STRLIT" WORD: " PRINTWORD CR
+                C_T_UNKNOWN OF ." UNKNOWN" CR ENDOF
+                C_T_NOP     OF ." NO-OP" CR ENDOF
+                C_T_PRIM    OF 1 +i ." PRIMITIVE:" DUP PRINTNEXT CR ENDOF
+                C_T_NUM     OF 1 +i ." NUMBER:" DUP PRINTNEXT CR ENDOF
+                C_T_RJMP    OF 1 +i ." JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_RBJMP   OF 1 +i ." JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_CRJMP   OF 1 +i ." COND JUMP FORWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_CRBJMP  OF 1 +i ." COND JUMP BACKWARD BY:" DUP PRINTNEXT CR ENDOF
+                C_T_ABSJMP  OF 1 +i ." ABSOLUTE JUMP TO:" DUP PRINTNEXT CR ENDOF
+                C_T_L       OF ." LEAVE LABEL, THIS IS PROBABLY AN ERROR/BUG" CR ENDOF
+                C_T_E       OF ." RETURN" CR ENDOF
+                C_T_E_NTC   OF ." RETURN (no tail recursion allowed)" CR ENDOF
+                C_T_EXEC    OF ." EXECUTE WORD FROM STACK" CR ENDOF
+                DUP ." WORD: " PRINTWORD CR
             ENDCASE
             DROP
         LOOP

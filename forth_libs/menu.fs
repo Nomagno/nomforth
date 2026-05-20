@@ -64,13 +64,13 @@ sp" GO BACK" CONSTANT EXIT_TEXT
 : DISPLAY ( position menu_adr -- )
     CR
     @ ( access the first field pointer, if 0 the menu is empty )
-    DUP 0 = IF STRLIT" Empty menu!!!" 2DROP EXIT CR THEN
+    DUP 0 = IF ." Empty menu!!!" 2DROP EXIT CR THEN
     0 >R ( position tracker on the return stack )
     BEGIN ( loop )
         SWAP DUP  R> DUP >R = IF ( Render cursor if position tracker matches position)
-            STRLIT" ->"
+            ." ->"
         ELSE
-            STRLIT"   "
+            ."   "
         THEN
         SWAP
         DUP @ COUNT TYPE CR ( text field)
@@ -84,7 +84,7 @@ sp" GO BACK" CONSTANT EXIT_TEXT
 VARIABLE INPUT_BUFFER
 : INPUT
     BEGIN
-        CR STRLIT" U/D/C? "
+        CR ." U/D/C? "
         INPUT_BUFFER 1 ACCEPT ( buffer size -- read_amount )
         1 = ( flag to check if the input was valid)
         DUP IF
@@ -155,7 +155,7 @@ VARIABLE INPUT_BUFFER
                 0 R> ( 0 position)
             THEN
         ENDOF
-        STRLIT" ERROR: INVALID INPUT TO MENU UPDATE" BYE
+        ." ERROR: INVALID INPUT TO MENU UPDATE" BYE
     ENDCASE
 ;
 

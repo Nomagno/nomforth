@@ -34,17 +34,47 @@
   1 + SWAP !
 ;
 
-: p" [CHAR] " PARSE ;
-: [p"] p" LIT, ; immediate
 : COUNT ( adr -- adr+1 strsize) DUP @ 1 -   SWAP 1 +   SWAP ;
 : UNCOUNT ( adr+1 strsize -- adr) DROP 1 - ;
-: ." p" COUNT TYPE ;
-: STRLIT"
-    p" LIT,
+
+: s"
+    [CHAR] " PARSE
+;
+
+: [s"]
+    s"
+    LIT,
+; immediate
+
+: ."
+    s"
+    COUNT
+    TYPE
+;
+
+: [."]
+    s"
+    LIT,
     PPW COUNT
     PPW TYPE
 ; immediate
-: sp"  p" LIT, ; immediate
+
+: ."
+    STATE @ IF
+        POSTPONE [."]
+    ELSE
+        ."
+    THEN
+; immediate allow_interpret
+
+: s"
+    STATE @ IF
+        POSTPONE [s"]
+    ELSE
+        s"
+    THEN
+; immediate allow_interpret
+
 : FILL ( c-char u char -- ) ROT ROT 0 ?DO 2DUP ! 1 + LOOP 2DROP ;
 : MOVE ( addr1 addr2 u -- )
     ( copies u cells starting from address 1 intro address 2)
@@ -89,7 +119,7 @@
 
 : ABORT ( string flag -- )
     IF
-      STRLIT" EXCEPTION: "
+      ." EXCEPTION: "
       COUNT TYPE
       QUIT
     ELSE
@@ -97,7 +127,7 @@
     THEN
 ;
 : ABORT" ( flag -- )
-    POSTPONE p"
+    POSTPONE s"
     POSTPONE LITERAL
     PPW SWAP
     PPW ABORT

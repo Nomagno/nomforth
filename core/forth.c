@@ -345,7 +345,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
         }
     }
     if (!was_there_error && !silent) printf(" {OK}\n");
-    //if (was_there_error)
+    return was_there_error;
 }
 
 void init(Ctx *c) {
@@ -389,16 +389,20 @@ void initPrimitives(Ctx *c) {
     }
 }
 
+unsigned lineno = 0;
 void repl(Ctx *c) {
     char line[1024];
     _Bool silent = 0;
     _Bool quit = 0;
+
     while(1) {
         silent = c->m[c->flags_ptr] >> 1 & 1;
         quit = c->m[c->flags_ptr] >> 0 & 1;
         if (quit) return;
 
         fgets(line, sizeof(line), stdin);
+        lineno += 1;
+
         unsigned lsize = char_strlen(line)-1; // Exclude terminating newline
         if (char_strlen(line) <= 0)
             continue;
@@ -407,7 +411,8 @@ void repl(Ctx *c) {
             c->m[c->inbuf_start+i] = line[i];
         c->m[c->inbuf_start+lsize] = '\0';
         if (!silent) printf("OUTPUT:");
-        interpret(c, &c->m[c->inbuf_start], lsize, silent);
+        int retval = interpret(c, &c->m[c->inbuf_start], lsize, silent);
+        if (retval) printf("Error line: %d\n", lineno);
     }    
 }
 

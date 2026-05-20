@@ -16,7 +16,9 @@
 
 PrimitiveData primTable[PRIM_NUM] = PRIM_TABLE_DEFAULT;
 
-#define WARNING(name) printf("WARNING: '%s' called with no name\n", #name)
+extern int lineno;
+
+#define WARNING(name) printf("WARNING LINE %d: '%s' called with no name\n", lineno, #name)
 #define C_LOR() Cell *lorig = c->input-w_size;
 /* CONSUMER is a macro to reflect a very common forth pattern:
  * A word that hijacks the input stream, advances it until the next character
