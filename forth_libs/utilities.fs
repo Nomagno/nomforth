@@ -37,43 +37,13 @@
 : COUNT ( adr -- adr+1 strsize) DUP @ 1 -   SWAP 1 +   SWAP ;
 : UNCOUNT ( adr+1 strsize -- adr) DROP 1 - ;
 
-: s"
-    [CHAR] " PARSE
-;
+: s" [CHAR] " PARSE ;
+: [s"] s" LIT, ; immediate
+: ." s" COUNT TYPE ;
 
-: [s"]
-    s"
-    LIT,
-; immediate
-
-: ."
-    s"
-    COUNT
-    TYPE
-;
-
-: [."]
-    s"
-    LIT,
-    PPW COUNT
-    PPW TYPE
-; immediate
-
-: ."
-    STATE @ IF
-        POSTPONE [."]
-    ELSE
-        ."
-    THEN
-; immediate allow_interpret
-
-: s"
-    STATE @ IF
-        POSTPONE [s"]
-    ELSE
-        s"
-    THEN
-; immediate allow_interpret
+: [."] POSTPONE [s"]   PPW COUNT   PPW TYPE ; immediate
+: ." STATE @ IF POSTPONE [."] ELSE ." THEN ; immediate allow_interpret
+: s" STATE @ IF POSTPONE [s"] ELSE s" THEN ; immediate allow_interpret
 
 \ Clears screen
 : CLEAR 27 emit ." [1J" ;
