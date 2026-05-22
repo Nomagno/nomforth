@@ -4,6 +4,17 @@
 
 ( Build the regular forth language, smoothing out inconsistencies)
 
+: ABC ;
+: ACB SWAP ;
+: BAC ROT SWAP ;
+: BCA ROT ;
+: CAB ROT ROT ;
+: CBA SWAP ROT ;
+: AXX 2DROP ;
+: XBX ROT 2DROP ;
+: XXC ROT ROT 2DROP ;
+: -ROT CAB ;
+
 : DICT_CURRENT ( -- current_dictionary_word_start)
     ( We can not do this because we do not have the word defined yet:)
     ( C_DICT_ADR @)
@@ -202,7 +213,7 @@ DECIMAL
 
 : ' ( "name" -- xt ) BL WORD FIND 
     DUP 0 = IF ( if the word doesn't exist, return 0)
-        DROP DROP 0
+        2DROP 0
     THEN
     DUP 0 != IF
         DROP
@@ -279,7 +290,7 @@ DECIMAL
 : ENDOF
     POSTPONE AHEAD ( create AHEAD reference to skip default case)
     ( OF_REF REF_COUNT AHEAD)
-    ROT ROT ( AHEAD OF_REF REF_COUNT )
+    -ROT ( AHEAD OF_REF REF_COUNT )
     SWAP ( AHEAD REF_COUNT OF_REF )
     POSTPONE THEN ( resolve last OF reference )
     1 + ( Increase reference count )
@@ -358,7 +369,6 @@ HEAP_INIT
 ;
 
 : BOOL_NORM LOGICAL_NOT LOGICAL_NOT ;
-: -ROT ROT ROT ;
 
 
 \ This section exists for standard forth compatibility
