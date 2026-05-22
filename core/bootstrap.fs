@@ -78,8 +78,6 @@ HEX
 : USERMEM 16000 ;
 DECIMAL
 
-: QUIT BYE ;
-
 : BYE_DEFERRED
     C_FLAGS_ADR
     DUP @ 1 0 LSHIFT OR
@@ -200,7 +198,7 @@ DECIMAL
 
 : STATE C_STATE_ADR ;
 : [ C_STATE_ADR 0 SWAP ! ; immediate
-: ] C_STATE_ADR -1 SWAP ! ;
+: ] C_STATE_ADR 1 SWAP ! ;
 
 : ' ( "name" -- xt ) BL WORD FIND 
     DUP 0 = IF ( if the word doesn't exist, return 0)

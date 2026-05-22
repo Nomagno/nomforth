@@ -95,7 +95,7 @@
     IF
       ." EXCEPTION: "
       COUNT TYPE
-      QUIT
+      BYE
     ELSE
       DROP
     THEN
