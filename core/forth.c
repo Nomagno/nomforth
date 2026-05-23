@@ -471,7 +471,7 @@ void repl(Ctx *c) {
 Ctx  context;
 int main(void) {
     init(&context);
-    printf("Welcome to nomForth!\nTo exit, type QUIT.\n");
+    printf("Welcome to nomForth!\nTo exit, type BYE.\n");
     repl(&context);
     printf("\nThanks for using nomForth.\n");
 }
