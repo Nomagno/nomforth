@@ -3,7 +3,7 @@
 ( MIT License )
 
 ( Makes nomforth usable by adding: )
-( double integer, string pad control, string functions, abort, second-class anonymous functions, pseudo-locals...)
+( double integer, yarnball control, string functions, abort, second-class anonymous functions, pseudo-locals...)
 
 : tri_less ( x y z -- z < x && z < y )
     dup rot < -rot swap < and ;
@@ -29,7 +29,7 @@
 ( String/array handling words)
 
 : NEWSTR ( -- adr)
-  C_PAD_ADR DUP
+  C_YARNBALL_ADR DUP
   @ DUP 0 SWAP !
   1 + SWAP !
 ;

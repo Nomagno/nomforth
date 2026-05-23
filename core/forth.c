@@ -21,15 +21,15 @@ Cell funcPop(Ctx *c)  { SCHECK(c->fstack_ptr, "Return");  c->m[c->fstack_ptr] -=
 Cell dataPeek(Ctx *c) { SCHECK(c->dstack_ptr, "Data");                            return c->m[c->m[c->dstack_ptr]-1]; }
 Cell funcPeek(Ctx *c) { SCHECK(c->fstack_ptr, "Return");                          return c->m[c->m[c->fstack_ptr]-1]; }
 
-Cell addToPad(Ctx *c, Cell *s, unsigned name_size) {
+Cell addToYarnball(Ctx *c, Cell *s, unsigned name_size) {
     if (s == NULL || *s == '\0')
         return 0;
-    Cell str_loc = c->m[c->pad_pos_ptr];
+    Cell str_loc = c->m[c->yarnball_pos_ptr];
     Cell str_size = name_size+1;
     c->m[str_loc]=str_size;
     for (unsigned i = 0; i < str_size-1; i++)
         c->m[str_loc+1+i]=s[i];
-    c->m[c->pad_pos_ptr] = str_loc + str_size;
+    c->m[c->yarnball_pos_ptr] = str_loc + str_size;
     return str_loc;
 }
 
@@ -41,7 +41,7 @@ void makeWord(Ctx *c, Cell *name, unsigned name_size,
 
     Cell curr = DICTPTR;
     GET_PREV(curr) = prev;
-    GET_NAME(curr) = addToPad(c, name, name_size);
+    GET_NAME(curr) = addToYarnball(c, name, name_size);
     GET_HEADER(curr) = SET_NO_TCO(forbid_tco) | SET_NO_WARN(allow_interpret) | SET_IMM(p) | data_size;
     for (unsigned i = 0; i < data_size; i++)
         GET_DATA(curr, i) = data[i];
@@ -357,7 +357,7 @@ void init(Ctx *c) {
     c->fstack_ptr = FSTACK_START-1;
     c->flags_ptr = FLAGS;
     c->dict_pos_ptr = DICT_START-1;
-    c->pad_pos_ptr = PAD_START-1;
+    c->yarnball_pos_ptr = YARNBALL_START-1;
     c->heap_start = HEAP_START;
     c->inbuf_start = INBUF_START;
 
@@ -370,7 +370,7 @@ void init(Ctx *c) {
     c->m[c->dstack_ptr] = DSTACK_START;
     c->m[c->fstack_ptr] = FSTACK_START;
     c->m[c->dict_pos_ptr] = NILPTR;
-    c->m[c->pad_pos_ptr] = PAD_START;
+    c->m[c->yarnball_pos_ptr] = YARNBALL_START;
     c->m[c->flags_ptr] = 0;
 
     initPrimitives(c);

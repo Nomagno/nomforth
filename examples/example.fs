@@ -83,10 +83,10 @@ see test
 ." Disassembly of /STRING: "
 see /string
 
-: getpad C_PAD_ADR 1 - ;
-:: printpad
-    getpad 1 + >A
-    getpad @   >B
+: getyarnball C_YARNBALL_ADR 1 - ;
+:: printyarnball
+    getyarnball 1 + >A
+    getyarnball @   >B
     A>         >C
 
     BEGIN C> 1 + B>  < WHILE
@@ -96,10 +96,10 @@ see /string
     REPEAT
 ;
 
-." Pad size: "
-getpad 1 +   getpad @ SWAP - .
+." Yarnball size: "
+getyarnball 1 +   getyarnball @ SWAP - .
 CR
-." PAD: "
-printpad
+." YARNBALL: "
+printyarnball
 
 bye

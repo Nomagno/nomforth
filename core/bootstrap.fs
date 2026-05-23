@@ -85,7 +85,7 @@
 : DP C_DICT_ADR ;
 
 HEX
-: C_PAD_ADR 1A000 LIT, ; immediate
+: C_YARNBALL_ADR 1A000 LIT, ; immediate
 : USERMEM 16000 ;
 DECIMAL
 
@@ -402,5 +402,5 @@ HEAP_INIT
   dup 0 = if drop exit then  swap >r 1 - recurse r> swap
 ;
 
-( adr -- , deletes all scratch pad entries starting from the selected address, by resetting the pad pointer)
-: RESET_PAD_TO C_PAD_ADR ! ;
+( adr -- , deletes all string sections entries starting from the selected address, by resetting the string section pointer)
+: RESET_YARNBALL_TO C_YARNBALL_ADR ! ;

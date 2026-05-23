@@ -115,7 +115,7 @@ MAKEPRIM(char) {
 }
 MAKEPRIM(word) {
     CONSUMER((char)dataPop(c), C_LOR(), , WARNING(word))
-    Cell created_string = addToPad(c, lorig, w_size);
+    Cell created_string = addToYarnball(c, lorig, w_size);
     dataPush(c, created_string);
 }
 MAKEPRIM(parse) {
@@ -124,12 +124,12 @@ MAKEPRIM(parse) {
     if (w_size == 0) { WARNING(parse); }
     Cell *lorig = c->input-w_size;
     c->input += 1;
-    Cell created_string = addToPad(c, lorig, w_size);
+    Cell created_string = addToYarnball(c, lorig, w_size);
     dataPush(c, created_string);
 }
 MAKEPRIM(parse_name) {
     CONSUMER(' ', C_LOR(), , WARNING(parse_name));
-    Cell created_string = addToPad(c, lorig, w_size);
+    Cell created_string = addToYarnball(c, lorig, w_size);
     dataPush(c, created_string);
 }
 MAKEPRIM(find) {

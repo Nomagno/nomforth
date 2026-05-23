@@ -53,14 +53,14 @@ typedef enum {
 //    data)
 
 // The dictionary pointer points to the start of the last-defined word,
-// The pad, function stack, and data stack pointers point to the
+// The yarnball, function stack, and data stack pointers point to the
 //     firt nonused byte.
 
 typedef struct {
     Cell dstack_ptr;
     Cell fstack_ptr;
     Cell flags_ptr;
-    Cell pad_pos_ptr;
+    Cell yarnball_pos_ptr;
     Cell dict_pos_ptr;
     Cell heap_start;
     Cell inbuf_start;
@@ -109,7 +109,7 @@ extern PrimitiveData primTable[PRIM_NUM];
 #define FSTACK_START  0x15000
 #define USERMEM_START 0x16000
 #define HEAP_START    0x18000
-#define PAD_START     0x1A000
+#define YARNBALL_START     0x1A000
 #define INBUF_START   0x1F000
 
 #define CA(...) (Cell[]){__VA_ARGS__}
@@ -121,7 +121,7 @@ void funcPush(Ctx *c, Cell v);
 Cell funcPop(Ctx *c);
 Cell funcPeek(Ctx *c);
 
-Cell addToPad(Ctx *c, Cell *s, unsigned name_size);
+Cell addToYarnball(Ctx *c, Cell *s, unsigned name_size);
 void makeWord(Ctx *c, Cell *name, unsigned name_size, _Bool p, _Bool forbid_tco,
               _Bool forbid_interpreting, Cell *data, unsigned data_size);
 Cell appendWord(Ctx *c, Cell *data, Cell data_size);
