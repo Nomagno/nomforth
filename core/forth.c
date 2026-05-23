@@ -374,6 +374,7 @@ void init(Ctx *c) {
     c->m[c->flags_ptr] = 0;
 
     initPrimitives(c);
+    initConstantWords(c);
 }
 void initPrimitives(Ctx *c) {
     for (unsigned i = 0; i < PRIM_NUM; i++) {
@@ -387,6 +388,54 @@ void initPrimitives(Ctx *c) {
                       CA(t_primitive, i, t_end), 3);
         }
     }
+}
+
+#define ADD_LOADER(_str, _val)\
+    tmpstring = _str;\
+    name_size = char_strlen(_str);\
+    tmpnatstring = malloc(sizeof(Cell)*name_size);\
+    for (unsigned i = 0; i < name_size; i++) tmpnatstring[i] = tmpstring[i]; \
+    makeWord(c, tmpnatstring, name_size,\
+            IMMEDIATE_WORD, PERM_DOESNOT_APPLY, DISALLOW_INTERPRET,\
+            CA(t_num, t_num, comma_address, t_num, _val, comma_address, t_end), 7); /*equivalent to : [WORDNAME] [_val] LIT, ; immediate */\
+    free(tmpnatstring);
+
+
+void initConstantWords(Ctx *c) {
+    char *tmpstring;
+    Cell *tmpnatstring;
+    unsigned name_size;
+    Cell comma_address = findWord(c, 'c', ",", char_strlen(","));
+
+    ADD_LOADER("C_T_UNKNOWN", t_unknown_label);
+    ADD_LOADER("C_T_NOP", t_nop);
+    ADD_LOADER("C_T_PRIM", t_primitive);
+    ADD_LOADER("C_T_NUM", t_num);
+    ADD_LOADER("C_T_RJMP", t_reljump);
+    ADD_LOADER("C_T_RBJMP", t_reljumpback);
+    ADD_LOADER("C_T_CRJMP", t_condreljump);
+    ADD_LOADER("C_T_CRBJMP", t_condreljumpback);
+    ADD_LOADER("C_T_ABSJMP", t_absjump);
+    ADD_LOADER("C_T_L", t_leavelabel);
+    ADD_LOADER("C_T_E", t_end);
+    ADD_LOADER("C_T_E_NTC", t_end_notailcall);
+    ADD_LOADER("C_T_EXEC", t_execute);
+
+    ADD_LOADER("C_PC_ADR", PC);
+    ADD_LOADER("C_STATE_ADR", CS);
+    ADD_LOADER("C_STRPOS_ADR", STRPOS);
+    ADD_LOADER("C_STRSIZE_ADR", STRSIZE);
+    ADD_LOADER("C_STRPTR_ADR", STRPTR);
+    ADD_LOADER("C_FLAGS_ADR", FLAGS);
+    ADD_LOADER("C_BASE_ADR", BASE);
+    ADD_LOADER("C_EXP_ADR", EXP);
+    ADD_LOADER("C_DICT_ADR", DICT_START-1);
+    ADD_LOADER("C_STACK_ADR", DSTACK_START-1);
+    ADD_LOADER("C_RSTACK_ADR", FSTACK_START-1);
+    ADD_LOADER("C_USERMEM_ADR", USERMEM_START);
+    ADD_LOADER("C_HEAP_ADR", HEAP_START);
+    ADD_LOADER("C_YARNBALL_ADR", YARNBALL_START);
+    ADD_LOADER("C_INBUF_ADR", INBUF_START);
 }
 
 unsigned lineno = 0;

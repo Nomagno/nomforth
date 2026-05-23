@@ -16,11 +16,10 @@
 : -ROT CAB ;
 
 : DICT_CURRENT ( -- current_dictionary_word_start)
-    ( We can not do this because we do not have the word defined yet:)
-    ( C_DICT_ADR @)
-    ( So we hard-code it)
-    31 @
+    C_DICT_ADR @
 ;
+: DP C_DICT_ADR ;
+: USERMEM C_USERMEM_ADR ;
 
 : SET_HEADER_BIT ( idx -- , sets word bit)
     >R
@@ -49,45 +48,12 @@
 : LIT, 3 , , ;
 : LITERAL LIT, ; immediate
 
-: C_T_UNKNOWN 0 LIT, ; immediate
-: C_T_NOP 1 LIT, ; immediate
-: C_T_PRIM 2 LIT, ; immediate
-: C_T_NUM 3 LIT, ; immediate
-: C_T_RJMP 4 LIT, ; immediate
-: C_T_RBJMP 5 LIT, ; immediate
-: C_T_CRJMP 6 LIT, ; immediate
-: C_T_CRBJMP 7 LIT, ; immediate
-: C_T_ABSJMP 8 LIT, ; immediate
-: C_T_L 9 LIT, ; immediate
-: C_T_E 10 LIT, ; immediate
-: C_T_E_NTC 11 LIT, ; immediate
-: C_T_EXEC 12 LIT, ; immediate
-
-: C_PC_ADR 1 LIT, ; immediate
-: C_STATE_ADR 2 LIT, ; immediate
-: C_STRPOS_ADR 3 LIT, ; immediate
-: C_STRSIZE_ADR 4 LIT, ; immediate
-: C_STRPTR_ADR 5 LIT, ; immediate
-: C_FLAGS_ADR 6 LIT, ; immediate
-: C_BASE_ADR 7 LIT, ; immediate
-: C_EXP_ADR 8 LIT, ; immediate
-
-
 : DECIMAL 10 C_BASE_ADR ! ;
 : HEX 16 C_BASE_ADR ! ;
 : OCTAL 16 C_BASE_ADR ! ;
 : DEC DECIMAL ;
 : BASE C_BASE_ADR ;
 : EXP C_EXP_ADR ;
-
-( When altering this, make sure to also alter the definition of DICT_CURRENT)
-: C_DICT_ADR 31 LIT, ; immediate
-: DP C_DICT_ADR ;
-
-HEX
-: C_YARNBALL_ADR 1A000 LIT, ; immediate
-: USERMEM 16000 ;
-DECIMAL
 
 : BYE_DEFERRED
     C_FLAGS_ADR

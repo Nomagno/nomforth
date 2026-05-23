@@ -119,16 +119,6 @@ MAKEPRIM(rswap);
 MAKEPRIM(rrot);
 MAKEPRIM(rtuck);
 
-#define     IMMEDIATE_WORD 1
-#define        NORMAL_WORD 0
-
-#define    ALLOW_INTERPRET 1
-#define DISALLOW_INTERPRET 0
-#define PERM_DOESNOT_APPLY 0
-
-#define         FORBID_TCO 1
-#define          ALLOW_TCO 0
-
 #define PRIM_TABLE_DEFAULT {                                                           \
     {PRIM(colon),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ":"},         \
     {PRIM(colonAnon),       NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ":NONAME"},   \

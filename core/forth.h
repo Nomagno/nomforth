@@ -134,6 +134,7 @@ int interpret(Ctx *c, Cell *l, unsigned l_size, _Bool silent);
 
 void init(Ctx *c);
 void initPrimitives(Ctx *c);
+void initConstantWords(Ctx *c);
 
 void repl(Ctx *c);
 
@@ -167,5 +168,16 @@ void repl(Ctx *c);
 #define PROGRAM_COUNTER (c->m[c->program_counter_ptr])
 #define EXP_PTR c->m[c->exp_ptr]
 #define BASE_PTR c->m[c->base_ptr]
+
+
+#define     IMMEDIATE_WORD 1
+#define        NORMAL_WORD 0
+
+#define    ALLOW_INTERPRET 1
+#define DISALLOW_INTERPRET 0
+#define PERM_DOESNOT_APPLY 0
+
+#define         FORBID_TCO 1
+#define          ALLOW_TCO 0
 
 #endif
