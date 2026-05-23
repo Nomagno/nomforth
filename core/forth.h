@@ -31,6 +31,7 @@ typedef enum {
     t_execute=12 // Execute word from the stack
 } CodeType;
 
+#define HEADER_SIZE 3
 // Execution Token = Name Token = (Prev Name Header [Data])
 // Prev: pointer to previous entry in the dictionary, can be 0 for the first entry
 // Name: pointer to counter string representing the word name, can be 0 for anonymous functions

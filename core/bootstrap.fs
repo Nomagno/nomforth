@@ -45,12 +45,12 @@
 ( Ascii code for a newline '\n')
 : LF 10 ;
 
-: LIT, 3 , , ;
+: LIT, C_T_NUM , , ;
 : LITERAL LIT, ; immediate
 
 : DECIMAL 10 C_BASE_ADR ! ;
 : HEX 16 C_BASE_ADR ! ;
-: OCTAL 16 C_BASE_ADR ! ;
+: OCTAL 8 C_BASE_ADR ! ;
 : DEC DECIMAL ;
 : BASE C_BASE_ADR ;
 : EXP C_EXP_ADR ;
@@ -161,7 +161,7 @@
     RAW_VAR_SIZE 7 -
 ;
 : >CODE ( xt -- first address of executable code)
-    3 +
+    C_HEADER_SIZE +
 ;
 
 : >BODY ( xt -- body_start_addr)

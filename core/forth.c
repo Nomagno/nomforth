@@ -436,6 +436,8 @@ void initConstantWords(Ctx *c) {
     ADD_LOADER("C_HEAP_ADR", HEAP_START);
     ADD_LOADER("C_YARNBALL_ADR", YARNBALL_START);
     ADD_LOADER("C_INBUF_ADR", INBUF_START);
+
+    ADD_LOADER("C_HEADER_SIZE", HEADER_SIZE);
 }
 
 unsigned lineno = 0;
