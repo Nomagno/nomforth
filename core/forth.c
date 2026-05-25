@@ -268,6 +268,41 @@ int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_lead
     if (now > max) return -(now-orig);
     else return (now-orig);
 }
+
+_Bool parseNumber(unsigned base, unsigned exp, Cell *lorig, unsigned w_size, unsigned *retnum) {
+
+    char tmpstring[w_size+1];
+    char_cell_memcpy(tmpstring, lorig, w_size);
+    tmpstring[w_size] = '\0';
+
+    int pos = delChar('.', tmpstring);
+    _Bool valid_dot = 0;
+    if (pos > 0) { //one dot
+        if ((int)exp < 0) {
+            int number_of_digits_after_point = (w_size-1)-pos;
+            valid_dot = number_of_digits_after_point == -(int)exp;
+        } else {
+            valid_dot = 0;
+        }
+        w_size -= 1;
+    } else if (pos == -1) { // no dots
+        valid_dot = (int)exp >= 0;
+    } else { //multiple dots, nonsense
+        valid_dot = 0;
+    }
+
+    char *endptr;
+    Cell val = strtol(tmpstring, &endptr, base);
+
+    unsigned converted_num_size = endptr-tmpstring;
+    if (valid_dot && converted_num_size == w_size) {
+        *retnum = val;
+        return 1; // All okay
+    } else {
+        return 0; // Not okay
+    }
+}
+
 int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
     _Bool do_continue = 1;
     _Bool was_there_error = 0;
@@ -275,10 +310,11 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
     c->input_end = c->input_start+src_size-1;
     c->input = src_start;
     while(do_continue) {
-        int w_size = consumeWord(&c->input, c->input_end, ' ', 1);
+        int w_size_raw = consumeWord(&c->input, c->input_end, ' ', 1);
 
         // This word is the last of the line, take absolute value to ake its length
-        if (w_size < 0) { do_continue = 0; w_size = -w_size; }
+        if (w_size_raw < 0) { do_continue = 0; w_size_raw = -w_size_raw; }
+        unsigned w_size = w_size_raw;
 
         // No more characters available
         if (w_size == 0) break;
@@ -312,48 +348,26 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
             }
         } else {
             *c->input = '\0';
-            char *endptr;
 
-            char tmpstring[w_size+1];
-            char_cell_memcpy(tmpstring, lorig, w_size);
-            tmpstring[w_size] = '\0';
-
-            int pos = delChar('.', tmpstring);
-            _Bool valid_dot = 0;
-            if (pos > 0) { //one dot
-                if ((int)EXP_PTR < 0) {
-                    int number_of_digits_after_point = (w_size-1)-pos;
-                    valid_dot = number_of_digits_after_point == -(int)EXP_PTR;
-                } else {
-                    valid_dot = 0;
-                }
-                w_size -= 1;
-            } else if (pos == -1) { // no dots
-                valid_dot = (int)EXP_PTR >= 0;
-            } else { //multiple dots, nonsense
-                valid_dot = 0;
-            }
-
-            Cell val = strtol(tmpstring, &endptr, BASE_PTR);
-            int converted_num_size = endptr-tmpstring;
+            unsigned parsed_num;
+            _Bool is_number = parseNumber(BASE_PTR, EXP_PTR, lorig, w_size, &parsed_num);
 
             if (do_continue != 0) *c->input = ' ';
 
-            if (valid_dot && converted_num_size == w_size) {
+            if (is_number) {
                 if (COMPILE_STATE == 0)
-                    dataPush(c, val);
+                    dataPush(c, parsed_num);
                 else {
                     // Tag for literal
                     dataPush(c, t_num); PRIM(comma)(c);
                     // Actual value
-                    dataPush(c, val); PRIM(comma)(c);
+                    dataPush(c, parsed_num); PRIM(comma)(c);
                 }
             } else {
-                if (valid_dot) printf("{ERROR: unknown word ");
-                else printf("{ERROR: bad size after fixed point ");
+                if ((int)EXP_PTR < 0) printf("{ERROR: (warn: EXP < 0, check number of decimals) unknown word ");
+                else printf("{ERROR: unknown word ");
 
-                unsigned size = w_size + (pos > 0);
-                PRINT_CELL_STRING(lorig, size);
+                PRINT_CELL_STRING(lorig, w_size);
                 printf("}\n");
                 do_continue = 0;
                 was_there_error = 1;
