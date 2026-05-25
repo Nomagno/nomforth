@@ -6,6 +6,11 @@
 #include <stdint.h>
 
 typedef uint32_t Cell;
+unsigned cell_strlen(Cell *i);
+unsigned char_strlen(char *i);
+void cell_char_memcpy(Cell *x, const char *y, unsigned len);
+void char_cell_memcpy(char *x, const Cell *y, unsigned len);
+
 
 //32 bits
 typedef enum {
@@ -148,14 +153,15 @@ void repl(Ctx *c);
 
 
 
-#define SET_VARIABLE(__x) (__x << 31)
-#define SET_NO_TCO(__x) (__x << 30)
-#define SET_NO_WARN(__x) (__x << 29)
-#define SET_IMM(__x) (__x << 28)
-#define CHECK_VARIABLE(__x) ((__x >> 31) & 1)
-#define CHECK_NO_TCO(__x) ((__x >> 30) & 1)
-#define CHECK_NO_WARN(__x) ((__x >> 29) & 1)
-#define CHECK_IMM(__x) ((__x >> 28) & 1)
+
+#define SET_VARIABLE(__x) ((unsigned)__x << 31)
+#define SET_NO_TCO(__x) ((unsigned)__x << 30)
+#define SET_NO_WARN(__x) ((unsigned)__x << 29)
+#define SET_IMM(__x) ((unsigned)__x << 28)
+#define CHECK_VARIABLE(__x) (((unsigned)__x >> 31) & 1)
+#define CHECK_NO_TCO(__x) (((unsigned)__x >> 30) & 1)
+#define CHECK_NO_WARN(__x) (((unsigned)__x >> 29) & 1)
+#define CHECK_IMM(__x) (((unsigned)__x >> 28) & 1)
 
 #define LPAREN (
 #define RPAREN )
@@ -169,6 +175,10 @@ void repl(Ctx *c);
 #define PROGRAM_COUNTER (c->m[c->program_counter_ptr])
 #define EXP_PTR c->m[c->exp_ptr]
 #define BASE_PTR c->m[c->base_ptr]
+
+#define PRINT_CELL_STRING(_ptr, _size)\
+    for (unsigned _i = 0; _i < _size && (unsigned char)((_ptr)[_i]) != '\0'; _i++)\
+        printf("%c", (unsigned char)((_ptr)[_i]));
 
 
 #define     IMMEDIATE_WORD 1

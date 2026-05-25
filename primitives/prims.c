@@ -32,20 +32,16 @@ extern int lineno;
     else { nonzero_size; } \
     post_action
 
-
-static unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
-static unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
-
 /* The forth core words: declare a new word, and end it */
 MAKEPRIM(colon) {
     CONSUMER(' ', C_LOR(), , WARNING(colon));
     makeWord(c, lorig, w_size, 0, 0, 0, NULL, 0);
-    GET_NAME(DICTPTR) |= (1 << 31); // fudge header
+    GET_NAME(DICTPTR) |= ((unsigned)1 << 31); // fudge header
     COMPILE_STATE = 1;
 }
 MAKEPRIM(colonAnon) {
     makeWord(c, (Cell[]){0}, 0, 0, 0, 0, NULL, 0);
-    GET_NAME(DICTPTR) |= (1 << 31); // fudge header
+    GET_NAME(DICTPTR) |= ((unsigned)1 << 31); // fudge header
     COMPILE_STATE = 1;
     dataPush(c, DICTPTR);
 }
@@ -346,9 +342,7 @@ MAKEPRIM(safe_emit){
 MAKEPRIM(type){
     Cell size = dataPop(c), str = dataPop(c);
     if (size == 0) printf("[EMPTY_STR]");
-    for (unsigned i = 0; i < size; i++) {
-        printf("%c", (unsigned char)c->m[str+i]);
-    }
+    PRINT_CELL_STRING(&c->m[str], size);
 }
 MAKEPRIM(cr) { printf("\n"); }
 MAKEPRIM(spaces) {
