@@ -101,7 +101,11 @@
     THEN
 ;
 : ABORT" ( flag -- )
+    ( EXECUTION semantics of s" )
+    POSTPONE [
     POSTPONE s"
+    POSTPONE ]
+
     POSTPONE LITERAL
     PPW SWAP
     PPW ABORT
