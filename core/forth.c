@@ -259,26 +259,36 @@ _Bool parseNumber(unsigned base, unsigned exp, Cell *lorig, unsigned w_size, uns
     tmpstring[w_size] = '\0';
 
     int pos = delChar('.', tmpstring);
-    _Bool valid_dot = 0;
+    enum {Valid_Fixed_Point, Invalid_Fixed_Point, Valid_Integer, Invalid_Integer}
+        number_validity = Valid_Integer;
     if (pos >= 0) { //dot found
         if ((int)exp < 0) {
             // Numbers can only contain dots if the current exponent of the base is negative
             int number_of_digits_after_point = (w_size-1)-pos;
-            valid_dot = number_of_digits_after_point == -(int)exp;
+            if (number_of_digits_after_point == -(int)exp) {
+                number_validity = Valid_Fixed_Point;
+            } else {
+                number_validity = Invalid_Fixed_Point;
+            }
         } else {
             // Else, it's not allowed to have dots
-            valid_dot = 0;
+            number_validity = Invalid_Integer;
         }
     } else { // no dots
         // Dots are mandatory if the exponent of the base is 0 or positive
-        valid_dot = (int)exp >= 0;
+        if ((int)exp >= 0) {
+            number_validity = Valid_Integer;
+        } else {
+            number_validity = Invalid_Fixed_Point;
+        }
     }
 
     char *endptr;
     Cell val = strtol(tmpstring, &endptr, base);
 
     unsigned converted_num_size = endptr-tmpstring;
-    if (valid_dot && converted_num_size == w_size - ((pos >= 0) ? 1 : 0)) {
+    _Bool valid = number_validity == Valid_Fixed_Point || number_validity == Valid_Integer;
+    if (valid && converted_num_size == w_size - ((pos >= 0) ? 1 : 0)) {
         *retnum = val;
         return 1; // All okay
     } else {
@@ -347,7 +357,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
                     dataPush(c, parsed_num); PRIM(comma)(c);
                 }
             } else {
-                if ((int)EXP_PTR < 0) printf("{ERROR: (warn: EXP < 0, check number of decimals) unknown word ");
+                if ((int)EXP_PTR < 0) printf("{ERROR: (warn: EXP < 0) unknown word ");
                 else printf("{ERROR: unknown word ");
 
                 PRINT_CELL_STRING(lorig, w_size);
