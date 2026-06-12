@@ -66,32 +66,6 @@ Cell appendWord(Ctx *c, Cell *data, unsigned data_size) {
     return (curr + (size-1) + data_size);
 }
 
-// Just to avoid pasting the same code twice
-#define INSTANCE_FIND_WORD(__type) \
-__type *n = (__type *)s;\
-if (s_size == 0) return 0;\
-_Bool condition = 1;\
-Cell curr = DICTPTR;\
-while (condition) {\
-    Cell temp_str = GET_NAME(curr);\
-    if (temp_str == 0 || (temp_str & ((unsigned)1 << 31)) != 0) { goto skip_##__type; }\
-    Cell temp_str_size = c->m[temp_str] - 1;\
-    unsigned i;\
-    _Bool are_equal = 1;\
-    if (s_size != temp_str_size) are_equal = 0;\
-    for (i = 0; i < s_size && are_equal; i++) {\
-        if (toupper(c->m[temp_str+1+i]) != toupper((__type)n[i])) are_equal = 0;\
-    }\
-    if (are_equal && (i == s_size)) condition = 0;\
-    else {\
-        skip_##__type:\
-        if (GET_PREV(curr) == 0) return 0;\
-        else curr = GET_PREV(curr);\
-    }\
-}\
-return curr;
-
-
 Cell findWord(Ctx *c, const Cell *s, unsigned s_size) {
     if (s_size == 0) return 0;
     _Bool condition = 1;
