@@ -8,8 +8,8 @@
 typedef uint32_t Cell;
 unsigned cell_strlen(Cell *i);
 unsigned char_strlen(char *i);
-void cell_char_memcpy(Cell *x, const char *y, unsigned len);
-void char_cell_memcpy(char *x, const Cell *y, unsigned len);
+void cell_char_memcpy(Cell *dest, const char *src, unsigned len);
+void char_cell_memcpy(char *dest, const Cell *src, unsigned len);
 
 
 //32 bits

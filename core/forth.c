@@ -9,18 +9,18 @@
 
 unsigned cell_strlen(Cell *i) { Cell *s; for (s = i; *s; ++s){}; return (s - i); }
 unsigned char_strlen(char *i) { char *s; for (s = i; *s; ++s){}; return (s - i); }
-void cell_char_memcpy(Cell *x, const char *y, unsigned len) {
+void cell_char_memcpy(Cell *dest, const char *src, unsigned len) {
     for (unsigned i = 0; i < len; i++)
-        x[i] = y[i];
+        dest[i] = src[i];
 }
-void char_cell_memcpy(char *x, const Cell *y, unsigned len) {
+void char_cell_memcpy(char *dest, const Cell *src, unsigned len) {
     for (unsigned i = 0; i < len; i++)
-        x[i] = y[i];
+        dest[i] = src[i];
 }
 
-void nf_memcpy(void *x, const void *y, unsigned len) {
+void nf_memcpy(void *dest, const void *src, unsigned len) {
     for (unsigned i = 0; i < len; i++)
-        ((char *)x)[i] = ((char *)y)[i];
+        ((char *)dest)[i] = ((char *)src)[i];
 }
 
 #define SCHECK(__var, __message) if (c->m[__var] == MEM_START(__var)) { printf("{%s stack underflow. ABORTING}", __message); exit(1); }
@@ -472,8 +472,7 @@ void repl(Ctx *c) {
         if (char_strlen(line) <= 0)
             continue;
 
-        for (unsigned i = 0; i < lsize; i++)
-            c->m[c->inbuf_start+i] = line[i];
+        cell_char_memcpy(&c->m[c->inbuf_start], line, lsize);
         c->m[c->inbuf_start+lsize] = '\0';
         if (!silent) printf("OUTPUT:");
         int retval = interpret(c, &c->m[c->inbuf_start], lsize, silent);
