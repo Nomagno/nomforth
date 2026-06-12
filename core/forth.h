@@ -131,7 +131,7 @@ Cell addToYarnball(Ctx *c, Cell *s, unsigned name_size);
 void makeWord(Ctx *c, Cell *name, unsigned name_size, _Bool p, _Bool forbid_tco,
               _Bool forbid_interpreting, Cell *data, unsigned data_size);
 Cell appendWord(Ctx *c, Cell *data, Cell data_size);
-Cell findWord(Ctx *c, char strtype, void *s, unsigned s_size);
+Cell findWord(Ctx *c, const Cell *s, unsigned s_size);
 
 void executePrimitive(Ctx *c, Cell id);
 void executeWord(Ctx *c, Cell w);
@@ -143,6 +143,8 @@ void initPrimitives(Ctx *c);
 void initConstantWords(Ctx *c);
 
 void repl(Ctx *c);
+
+#define COUNTOF(_x) (sizeof(_x) / sizeof(_x[0]))
 
 #define MAKEPRIM(x) void prim_##x(Ctx *c)
 #define PRIM(x) prim_##x

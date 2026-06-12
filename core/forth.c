@@ -92,10 +92,28 @@ while (condition) {\
 return curr;
 
 
-Cell findWord(Ctx *c, char strtype, void *s, unsigned s_size) {
-    if (strtype == 'n') { INSTANCE_FIND_WORD(Cell); } //native string
-    else if (strtype == 'c') { INSTANCE_FIND_WORD(char); } //character/C string
-    else { return 0; } //unknown
+Cell findWord(Ctx *c, const Cell *s, unsigned s_size) {
+    if (s_size == 0) return 0;
+    _Bool condition = 1;
+    Cell curr = DICTPTR;\
+    while (condition) {
+        Cell temp_str = GET_NAME(curr);
+        if (temp_str == 0 || (temp_str & ((unsigned)1 << 31)) != 0) { goto skip; }
+        Cell temp_str_size = c->m[temp_str] - 1;
+        unsigned i;
+        _Bool are_equal = 1;
+        if (s_size != temp_str_size) are_equal = 0;
+        for (i = 0; i < s_size && are_equal; i++) {
+            if (toupper(c->m[temp_str+1+i]) != toupper(s[i])) are_equal = 0;
+        }
+        if (are_equal && (i == s_size)) condition = 0;
+        else {
+            skip:
+            if (GET_PREV(curr) == 0) return 0;
+            else curr = GET_PREV(curr);
+        }
+    }
+    return curr;
 }
 
 
@@ -106,27 +124,19 @@ static int findChar(char x, char *str) {
     return -1;
 }
 
-// Removes all occurences of x from str
-// retval >= 0: position in str where the last occurence of x happened
-// retval == -1 : x did not occur in str
-// retval < -1 : multiple instances of x occured, last one at -retval-2
-// With this information, AxBxC can be separated into parts AB and C
-// Main purpose: 1.2 -> 1 and 2
-//               1.2.5 -> 12 and 5
+// Removes first occurence of x from str
+// Returns position of deletal, or -1 if not found
 static int delChar(char x, char *str) {
-    unsigned count = 0;
-    int pos = 0;
-    while (findChar(x, str) != -1) {
-        pos = findChar(x, str);
-        count += 1;
+    int pos = findChar(x, str);
+    if (pos == -1) {
+        return -1;
+    } else {
         unsigned i;
         for (i = pos; str[i+1] != '\0'; i++)
             str[i] = str[i+1];
         str[i] = '\0';
+        return pos;
     }
-    if (count == 1) return pos;
-    else if (count == 0) return -1;
-    else return -pos-2;
 }
 
 void executePrimitive(Ctx *c, Cell id) {
@@ -270,32 +280,31 @@ int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_lead
 }
 
 _Bool parseNumber(unsigned base, unsigned exp, Cell *lorig, unsigned w_size, unsigned *retnum) {
-
     char tmpstring[w_size+1];
     char_cell_memcpy(tmpstring, lorig, w_size);
     tmpstring[w_size] = '\0';
 
     int pos = delChar('.', tmpstring);
     _Bool valid_dot = 0;
-    if (pos > 0) { //one dot
+    if (pos >= 0) { //dot found
         if ((int)exp < 0) {
+            // Numbers can only contain dots if the current exponent of the base is negative
             int number_of_digits_after_point = (w_size-1)-pos;
             valid_dot = number_of_digits_after_point == -(int)exp;
         } else {
+            // Else, it's not allowed to have dots
             valid_dot = 0;
         }
-        w_size -= 1;
-    } else if (pos == -1) { // no dots
+    } else { // no dots
+        // Dots are mandatory if the exponent of the base is 0 or positive
         valid_dot = (int)exp >= 0;
-    } else { //multiple dots, nonsense
-        valid_dot = 0;
     }
 
     char *endptr;
     Cell val = strtol(tmpstring, &endptr, base);
 
     unsigned converted_num_size = endptr-tmpstring;
-    if (valid_dot && converted_num_size == w_size) {
+    if (valid_dot && converted_num_size == w_size - ((pos >= 0) ? 1 : 0)) {
         *retnum = val;
         return 1; // All okay
     } else {
@@ -321,7 +330,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
 
         Cell *lorig = c->input-w_size;
 
-        Cell w = findWord(c, 'n', lorig, w_size);
+        Cell w = findWord(c, lorig, w_size);
         if (w != 0) {
             // - Highest bit is for auxiliary info,
             // - Second highest is for TCO permissions,
@@ -434,7 +443,9 @@ void initConstantWords(Ctx *c) {
     char *tmpstring;
     Cell *tmpnatstring;
     unsigned name_size;
-    Cell comma_address = findWord(c, 'c', ",", char_strlen(","));
+
+    const Cell comma_lit[] = {','};
+    Cell comma_address = findWord(c, comma_lit, COUNTOF(comma_lit));
 
     ADD_LOADER("C_T_UNKNOWN", t_unknown_label);
     ADD_LOADER("C_T_NOP", t_nop);

@@ -76,7 +76,9 @@ MAKEPRIM(worddoesprim) { // DO NOT CALL THE WORDDOESPRIM C PRIMITIVE DIRECTLY!
     GET_DATA(current_word, 3) = pc+2; //replace other dummy END with jump value
 }
 MAKEPRIM(worddoes) {
-    Cell appended_w = findWord(c, 'c', "DOES>PRIM", char_strlen("DOES>PRIM"));
+    // DOES>PRIM
+    const Cell does_prim_lit[] = { 'D', 'O', 'E', 'S', '>', 'P', 'R', 'I', 'M' };
+    Cell appended_w = findWord(c, does_prim_lit, COUNTOF(does_prim_lit));
     appendWord(c, CA(appended_w), 1);
     appendWord(c, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
@@ -130,13 +132,13 @@ MAKEPRIM(parse_name) {
 }
 MAKEPRIM(find) {
     Cell obtained_str = dataPop(c);
-    Cell found_word = findWord(c, 'n', &c->m[obtained_str+1], c->m[obtained_str]-1);
+    Cell found_word = findWord(c, &c->m[obtained_str+1], c->m[obtained_str]-1);
     if (found_word == 0) { dataPush(c, obtained_str); dataPush(c, 0); }
     else { dataPush(c, found_word); dataPush(c, ((c->m[found_word+2] >> 24) != 0) ? 1 : -1); }
 }
 MAKEPRIM(is) {
     CONSUMER(' ', C_LOR(), , WARNING(is));
-    Cell assigned_word = findWord(c, 'n', lorig, w_size);
+    Cell assigned_word = findWord(c, lorig, w_size);
     Cell popped_xt = dataPop(c);
     if (EXTRACT_SIZE(assigned_word) - 3 >= 1)
         GET_DATA(assigned_word, 0) = popped_xt;
@@ -149,7 +151,7 @@ MAKEPRIM(defer) {
 }
 MAKEPRIM(postpone) {
     CONSUMER(' ', C_LOR(), , WARNING(postpone));
-    Cell found_word = findWord(c, 'n', lorig, w_size);
+    Cell found_word = findWord(c, lorig, w_size);
     appendWord(c, CA(found_word), 1);
 }
 MAKEPRIM(save_input){
