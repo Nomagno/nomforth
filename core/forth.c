@@ -23,6 +23,9 @@ void nf_memcpy(void *dest, const void *src, unsigned len) {
         ((char *)dest)[i] = ((char *)src)[i];
 }
 
+#define NOMFORTH_SYSTEM_MESSAGE(_prepended_string, _appended_statement)\
+{ printf("{"); printf(_prepended_string); _appended_statement; printf("}\n"); }
+
 #define SCHECK(__var, __message) if (c->m[__var] == MEM_START(__var)) { printf("{%s stack underflow. ABORTING}", __message); exit(1); }
 
 void dataPush(Ctx *c, Cell v) { c->m[c->m[c->dstack_ptr]] = v;  c->m[c->dstack_ptr] += 1; }
@@ -118,15 +121,12 @@ void executePrimitive(Ctx *c, Cell id) {
     else primTable[id].func(c);
 }
 
-#define NOMFORTH_SYSTEM_MESSAGE(_prepended_string, _appended_statement, ...)\
-{ printf("{"); printf(_prepended_string); _appended_statement; printf("}"); __VA_OPT__(printf(__VA_ARGS__);) }
-
 void executeWord(Ctx *c, Cell w) {
     PROGRAM_COUNTER = w+3;
 
     if (w < c->dict_pos_ptr+1) {
         NOMFORTH_SYSTEM_MESSAGE("ERROR: INVALID XT ADDRESS (TOO LOW): ",
-                                printf("0x%X", w), "\n");
+                                printf("0x%X", w));
         return;
     }
 
@@ -144,15 +144,14 @@ void executeWord(Ctx *c, Cell w) {
                         unsigned str_size = c->m[GET_NAME(w)] - 1;
                         Cell *str_start = &c->m[GET_NAME(w)+1];
                         PRINT_CELL_STRING(str_start, str_size);
-                    }
-        , "\n");
+                    });
 
     while (!reached_end) {
         Cell contents = PROGRAM_COUNTER;
         switch(c->m[contents]){
         case t_unknown_label:
             NOMFORTH_SYSTEM_MESSAGE("ERROR: 0 IS NOT A VALID INSTRUCTION, PC ",
-                                    printf("0x%X", contents), "\n")
+                                    printf("0x%X", contents));
             reached_end = 1;
             break;
         case t_nop:
@@ -161,7 +160,7 @@ void executeWord(Ctx *c, Cell w) {
         case t_primitive: ;
             if (do_trace)
                 NOMFORTH_SYSTEM_MESSAGE("TRACE: going to primitive ",
-                                        printf("0x%X", c->m[contents+1]), "\n");
+                                        printf("0x%X", c->m[contents+1]));
 
             // in case the primitive tries to (or accidentally) hijack the program
             // counter, we preserve and restore it ourselves
@@ -197,7 +196,7 @@ void executeWord(Ctx *c, Cell w) {
             PROGRAM_COUNTER = c->m[contents+1];
             break;
         case t_leavelabel:
-            NOMFORTH_SYSTEM_MESSAGE("ERROR: Non-replaced leave label, this shouldn't have happened", , "\n")
+            NOMFORTH_SYSTEM_MESSAGE("ERROR: Non-replaced leave label, this shouldn't have happened", );
             reached_end = 1;
             break;
         case t_end_notailcall:
@@ -210,7 +209,7 @@ void executeWord(Ctx *c, Cell w) {
             Cell next_pc = funcPop(c);
             if (do_trace)
                 NOMFORTH_SYSTEM_MESSAGE("TRACE: going back to pc ",
-                                        printf("0x%X from 0x%X", next_pc, contents), "\n");
+                                        printf("0x%X from 0x%X", next_pc, contents));
 
             if (next_pc == 0) {
                 // If the next program counter is 0,
@@ -233,19 +232,18 @@ void executeWord(Ctx *c, Cell w) {
 
             if (new_w < c->dict_pos_ptr+1) {
                 NOMFORTH_SYSTEM_MESSAGE("ERROR: INVALID XT ADDRESS (TOO LOW): ",
-                                        printf("0x%X", new_w), "\n");
+                                        printf("0x%X", new_w));
                 reached_end = 1;
                 break;
             }
 
             if (CHECK_NO_TCO(GET_HEADER(c->m[contents])) || (c->m[contents+1] != t_end)) {
-                printf("No TCO\n");
                 funcPush(c, PROGRAM_COUNTER);
             } else {
                 // If it's a tail call no need to push another stack frame,
                 // Unless the word is forbidden from being Tail Call Optimized
                 if (do_trace)
-                    printf("{TRACE: Next jump is in tail position}\n");
+                    NOMFORTH_SYSTEM_MESSAGE("TRACE: Next jump is in tail position", );
             }
 
             contents = new_w+3;
@@ -259,8 +257,7 @@ void executeWord(Ctx *c, Cell w) {
                                 unsigned str_size = c->m[GET_NAME(new_w)] - 1;
                                 Cell *str_start = &c->m[GET_NAME(new_w)+1];
                                 PRINT_CELL_STRING(str_start, str_size);
-                            }
-                , "\n");
+                            });
             }
             break;
         }
@@ -354,7 +351,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
             if (priority || COMPILE_STATE == 0) {
                 if (priority && !allow_interpreting && COMPILE_STATE == 0) {
                     NOMFORTH_SYSTEM_MESSAGE("ERROR: CAN NOT INTERPRET COMPILE-ONLY WORD ",
-                                            PRINT_CELL_STRING(lorig, w_size), "\n")
+                                            PRINT_CELL_STRING(lorig, w_size))
                     do_continue = 0;
                     was_there_error = 1;
                 } else {
@@ -386,7 +383,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
                 }
             } else {
                 NOMFORTH_SYSTEM_MESSAGE("ERROR: unknown word ",
-                                        PRINT_CELL_STRING(lorig, w_size), "\n")
+                                        PRINT_CELL_STRING(lorig, w_size))
                 do_continue = 0;
                 was_there_error = 1;
             }
