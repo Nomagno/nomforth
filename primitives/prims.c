@@ -85,9 +85,7 @@ MAKEPRIM(worddoes) {
 MAKEPRIM(getffi) {
     CONSUMER(' ', C_LOR(), , WARNING(getffi));
     char tmp_str[w_size+1];
-    for (int i = 0; i < w_size; i++) {
-        tmp_str[i] = lorig[i];
-    }
+    char_cell_memcpy(tmp_str, lorig, w_size);
     tmp_str[w_size] = '\0';
     dataPush(c, (uintptr_t)dlsym(RTLD_DEFAULT, tmp_str));
 }
@@ -308,18 +306,16 @@ MAKEPRIM(accept){
     Cell size_limit = dataPop(c);
     Cell address = dataPop(c);
     char tmp_str[size_limit];
-    unsigned i;
-    for (i = 0; i < size_limit; i++){
+    unsigned size;
+    for (size = 0; size < size_limit; size++){
         char c = getchar();
         if (c == '\n') break;
-        else tmp_str[i] = c;
+        else tmp_str[size] = c;
     }
-    if (i >= size_limit) /*Read and discard until newline*/
-        for (int j = i; ; j++) { if (getchar() == '\n') break; }
-    for (unsigned k = 0; k < i; k++) {
-        c->m[address+k] = tmp_str[k];
-    }
-    dataPush(c, i);
+    if (size >= size_limit) /*Read and discard until newline*/
+        for (int j = size; ; j++) { if (getchar() == '\n') break; }
+    cell_char_memcpy(&c->m[address], tmp_str, size);
+    dataPush(c, size);
 }
 MAKEPRIM(flushoutput){
     fflush(stdout);
