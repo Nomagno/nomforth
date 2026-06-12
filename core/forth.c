@@ -118,37 +118,50 @@ void executePrimitive(Ctx *c, Cell id) {
     else primTable[id].func(c);
 }
 
+#define NOMFORTH_SYSTEM_MESSAGE(_prepended_string, _appended_statement, ...)\
+{ printf("{"); printf(_prepended_string); _appended_statement; printf("}"); __VA_OPT__(printf(__VA_ARGS__);) }
+
 void executeWord(Ctx *c, Cell w) {
     PROGRAM_COUNTER = w+3;
+
+    if (w < c->dict_pos_ptr+1) {
+        NOMFORTH_SYSTEM_MESSAGE("ERROR: INVALID XT ADDRESS (TOO LOW): ",
+                                printf("0x%X", w), "\n");
+        return;
+    }
+
     //_Bool silent = c->m[c->flags_ptr] >> 1 & 1;
     _Bool trace  = c->m[c->flags_ptr] >> 2 & 1;
     _Bool reached_end = 0;
     _Bool do_trace = trace;
 
-    if (do_trace) {
-        printf("{TRACE: entering word 0x%X, ", w);
-        if (GET_NAME(w) == 0) {
-            printf("[[NO NAME]]");
-        } else {
-            unsigned str_size = c->m[GET_NAME(w)] - 1;
-            Cell *str_start = &c->m[GET_NAME(w)+1];
-            PRINT_CELL_STRING(str_start, str_size);
-        }
-        printf("}\n");
-    }
+    if (do_trace)
+        NOMFORTH_SYSTEM_MESSAGE("TRACE: jumping to word ",
+                    printf("0x%X, ", w);
+                    if (GET_NAME(w) == 0) {
+                        printf("[[NO NAME]]");
+                    } else {
+                        unsigned str_size = c->m[GET_NAME(w)] - 1;
+                        Cell *str_start = &c->m[GET_NAME(w)+1];
+                        PRINT_CELL_STRING(str_start, str_size);
+                    }
+        , "\n");
 
     while (!reached_end) {
         Cell contents = PROGRAM_COUNTER;
         switch(c->m[contents]){
         case t_unknown_label:
-            printf("{ERROR: 0 IS NOT A VALID INSTRUCTION, PC 0x%X}\n", contents);
+            NOMFORTH_SYSTEM_MESSAGE("ERROR: 0 IS NOT A VALID INSTRUCTION, PC ",
+                                    printf("0x%X", contents), "\n")
             reached_end = 1;
             break;
         case t_nop:
             PROGRAM_COUNTER += 1;
             break;
         case t_primitive: ;
-            if (do_trace) printf("{TRACE: going to primitive 0x%X}\n", c->m[contents+1]);
+            if (do_trace)
+                NOMFORTH_SYSTEM_MESSAGE("TRACE: going to primitive ",
+                                        printf("0x%X", c->m[contents+1]), "\n");
 
             // in case the primitive tries to (or accidentally) hijack the program
             // counter, we preserve and restore it ourselves
@@ -184,7 +197,7 @@ void executeWord(Ctx *c, Cell w) {
             PROGRAM_COUNTER = c->m[contents+1];
             break;
         case t_leavelabel:
-            printf("{ERROR: Non-replaced leave label, this shouldn't have happened}\n");
+            NOMFORTH_SYSTEM_MESSAGE("ERROR: Non-replaced leave label, this shouldn't have happened", , "\n")
             reached_end = 1;
             break;
         case t_end_notailcall:
@@ -195,7 +208,10 @@ void executeWord(Ctx *c, Cell w) {
         case t_end:
             ;
             Cell next_pc = funcPop(c);
-            if (do_trace) printf("{TRACE: going back to pc 0x%X from 0x%X}\n", next_pc, contents);
+            if (do_trace)
+                NOMFORTH_SYSTEM_MESSAGE("TRACE: going back to pc ",
+                                        printf("0x%X from 0x%X", next_pc, contents), "\n");
+
             if (next_pc == 0) {
                 // If the next program counter is 0,
                 // we're going back to the interpreter
@@ -212,26 +228,39 @@ void executeWord(Ctx *c, Cell w) {
             Cell new_w = 0;
             new_w = dataPop(c);
         default:
+            if (c->m[contents] != t_execute)
+                new_w = c->m[contents];
+
+            if (new_w < c->dict_pos_ptr+1) {
+                NOMFORTH_SYSTEM_MESSAGE("ERROR: INVALID XT ADDRESS (TOO LOW): ",
+                                        printf("0x%X", new_w), "\n");
+                reached_end = 1;
+                break;
+            }
+
             if (CHECK_NO_TCO(GET_HEADER(c->m[contents])) || (c->m[contents+1] != t_end)) {
+                printf("No TCO\n");
                 funcPush(c, PROGRAM_COUNTER);
             } else {
                 // If it's a tail call no need to push another stack frame,
                 // Unless the word is forbidden from being Tail Call Optimized
-                if (do_trace) printf("{TRACE: Next jump is in tail position}\n");
+                if (do_trace)
+                    printf("{TRACE: Next jump is in tail position}\n");
             }
-            if (c->m[contents] != t_execute) new_w = c->m[contents]; 
+
             contents = new_w+3;
             PROGRAM_COUNTER = contents;
             if (do_trace) {
-                printf("{TRACE: jumping to word 0x%X, ", new_w);
-                if (GET_NAME(new_w) == 0) {
-                    printf("[[NO NAME]]");
-                } else {
-                    unsigned str_size = c->m[GET_NAME(new_w)] - 1;
-                    Cell *str_start = &c->m[GET_NAME(new_w)+1];
-                    PRINT_CELL_STRING(str_start, str_size);
-                }
-                printf("}\n");
+                NOMFORTH_SYSTEM_MESSAGE("TRACE: jumping to word ",
+                            printf("0x%X, ", new_w);
+                            if (GET_NAME(new_w) == 0) {
+                                printf("[[NO NAME]]");
+                            } else {
+                                unsigned str_size = c->m[GET_NAME(new_w)] - 1;
+                                Cell *str_start = &c->m[GET_NAME(new_w)+1];
+                                PRINT_CELL_STRING(str_start, str_size);
+                            }
+                , "\n");
             }
             break;
         }
@@ -324,9 +353,8 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
             _Bool allow_interpreting = CHECK_NO_WARN(GET_HEADER(w));
             if (priority || COMPILE_STATE == 0) {
                 if (priority && !allow_interpreting && COMPILE_STATE == 0) {
-                    printf("{ERROR: CAN NOT INTERPRET COMPILE-ONLY WORD ");
-                    PRINT_CELL_STRING(lorig, w_size);
-                    printf("}\n");
+                    NOMFORTH_SYSTEM_MESSAGE("ERROR: CAN NOT INTERPRET COMPILE-ONLY WORD ",
+                                            PRINT_CELL_STRING(lorig, w_size), "\n")
                     do_continue = 0;
                     was_there_error = 1;
                 } else {
@@ -343,7 +371,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
             *c->input = '\0';
 
             unsigned parsed_num;
-            _Bool is_number = parseNumber(BASE_PTR, EXP_PTR, lorig, w_size, &parsed_num);
+            _Bool is_number = parseNumber(BASE_VAL, EXP_VAL, lorig, w_size, &parsed_num);
 
             if (do_continue != 0) *c->input = ' ';
 
@@ -357,11 +385,8 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
                     dataPush(c, parsed_num); PRIM(comma)(c);
                 }
             } else {
-                if ((int)EXP_PTR < 0) printf("{ERROR: (warn: EXP < 0) unknown word ");
-                else printf("{ERROR: unknown word ");
-
-                PRINT_CELL_STRING(lorig, w_size);
-                printf("}\n");
+                NOMFORTH_SYSTEM_MESSAGE("ERROR: unknown word ",
+                                        PRINT_CELL_STRING(lorig, w_size), "\n")
                 do_continue = 0;
                 was_there_error = 1;
             }
@@ -384,7 +409,7 @@ void init(Ctx *c) {
     c->heap_start = HEAP_START;
     c->inbuf_start = INBUF_START;
 
-    c->m = malloc(sizeof(Cell)*MEM_MAX);
+    c->m = malloc(MEM_MAX*sizeof(Cell));
 
     c->m[c->base_ptr] = 10;
     c->m[c->exp_ptr] = 0;
@@ -415,7 +440,7 @@ void initPrimitives(Ctx *c) {
 #define ADD_LOADER(_str, _val)\
     tmpstring = _str;\
     name_size = char_strlen(_str);\
-    tmpnatstring = malloc(sizeof(Cell)*name_size);\
+    tmpnatstring = malloc(name_size*sizeof(Cell));\
     for (unsigned i = 0; i < name_size; i++) tmpnatstring[i] = tmpstring[i]; \
     makeWord(c, tmpnatstring, name_size,\
             IMMEDIATE_WORD, PERM_DOESNOT_APPLY, DISALLOW_INTERPRET,\
@@ -475,7 +500,7 @@ void repl(Ctx *c) {
         quit = c->m[c->flags_ptr] >> 0 & 1;
         if (quit) return;
 
-        fgets(line, sizeof(line), stdin);
+        fgets(line, COUNTOF(line), stdin);
         lineno += 1;
 
         unsigned lsize = char_strlen(line)-1; // Exclude terminating newline

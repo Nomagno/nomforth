@@ -175,8 +175,8 @@ void repl(Ctx *c);
 #define COMPILE_STATE (c->m[c->compile_state_ptr])
 #define DICTPTR (c->m[c->dict_pos_ptr])
 #define PROGRAM_COUNTER (c->m[c->program_counter_ptr])
-#define EXP_PTR c->m[c->exp_ptr]
-#define BASE_PTR c->m[c->base_ptr]
+#define EXP_VAL c->m[c->exp_ptr]
+#define BASE_VAL c->m[c->base_ptr]
 
 #define PRINT_CELL_STRING(_ptr, _size)\
     for (unsigned _i = 0; _i < _size && (unsigned char)((_ptr)[_i]) != '\0'; _i++)\
