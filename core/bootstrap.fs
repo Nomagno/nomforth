@@ -300,6 +300,22 @@
 ( Make sure to initialize the heap)
 HEAP_INIT
 
+: RESET_OUTER_INTERPRETER_HOOKS
+    C_PARSING_VECTOR_START_ADR
+    ( We build it in reverse, because the minute we set the first cell of the array to non-zero, )
+    ( It will get activated)
+    DUP 0 + 0 SWAP !
+
+    DUP 3 + ['] HANDLE-NUMBER-OUTER SWAP !
+    DUP 2 + ['] PARSE-NUMBER-OUTER  SWAP !
+    DUP 1 + ['] HANDLE-WORD-OUTER   SWAP !
+    DUP 0 + ['] FIND-OUTER          SWAP !
+    DUP 1 - ['] ERROR-HANDLER-DEFAULT SWAP !
+    DROP
+;
+
+RESET_OUTER_INTERPRETER_HOOKS
+
 \ This is the end of the bootstrapping, now we build some utility functions.
 
 

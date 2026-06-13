@@ -191,9 +191,8 @@ void executeWord(Ctx *c, Cell w) {
                 PROGRAM_COUNTER = 0;
                 reached_end = 1;
             } else {
-                // By convention the program counter needs to be incremented from the callee
+                // By convention the program counter needs to be incremented from the caller
                 PROGRAM_COUNTER = next_pc;
-                PROGRAM_COUNTER += 1;
             }
             break;
         case t_execute:
@@ -212,7 +211,7 @@ void executeWord(Ctx *c, Cell w) {
             }
 
             if (CHECK_NO_TCO(GET_HEADER(c->m[contents])) || (c->m[contents+1] != t_end)) {
-                funcPush(c, PROGRAM_COUNTER);
+                funcPush(c, PROGRAM_COUNTER+1);
             } else {
                 // If it's a tail call no need to push another stack frame,
                 // Unless the word is forbidden from being Tail Call Optimized
@@ -295,7 +294,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
                 break;
 
             if (fallback) vm_memory[i](c);
-            else          executeWord(c, c->m[i]);
+            else          { funcPush(c, 0); executeWord(c, c->m[i]); }
 
             Cell result2 = dataPop(c);
             Cell result1 = dataPop(c);
@@ -307,7 +306,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
             dataPush(c, result2);
 
             if (fallback) vm_memory[i+1](c);
-            else          executeWord(c, c->m[i+1]);
+            else          { funcPush(c, 0); executeWord(c, c->m[i+1]); }
 
             Cell action_result = dataPop(c);
             if (action_result == 0) {
@@ -327,6 +326,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
             if (error_handler == 0) {
                 PRIM(error_handler_default)(c);
             } else {
+                funcPush(c, 0); 
                 executeWord(c, error_handler);
             }
         }

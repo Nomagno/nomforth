@@ -195,8 +195,7 @@ lspA CONSTANT lsp_start
 : ::
     :
     PPW lsp->
-    ( substract 1 because the convention dictates the callee will increment it)
-    ['] <-lsp >CODE 1 - LIT,
+    ['] <-lsp >CODE LIT,
     PPW >r ( append continuation to return stack)
 ;
 
