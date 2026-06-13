@@ -71,6 +71,9 @@ typedef struct {
     Cell heap_start;
     Cell inbuf_start;
 
+    Cell parsing_vector_start;
+    Cell parsing_vector_length;
+
     Cell *input_end;
     Cell *input_start;
     Cell *input;
@@ -110,7 +113,10 @@ extern PrimitiveData primTable[PRIM_NUM];
 #define BASE  0x0007
 #define EXP  0x0008
 
-#define DICT_START    0x0020
+#define PARSING_VECTOR_START 0x000A
+#define PARSING_VECTOR_LENGTH 16
+
+#define DICT_START    0x0040
 #define DSTACK_START  0x14000
 #define FSTACK_START  0x15000
 #define USERMEM_START 0x16000
@@ -139,10 +145,11 @@ int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_lead
 int interpret(Ctx *c, Cell *l, unsigned l_size, _Bool silent);
 
 void init(Ctx *c);
-void initPrimitives(Ctx *c);
-void initConstantWords(Ctx *c);
 
 void repl(Ctx *c);
+
+void initPrimitives(Ctx *c);
+void initConstantWords(Ctx *c);
 
 #define COUNTOF(_x) (sizeof(_x) / sizeof(_x[0]))
 
@@ -182,6 +189,8 @@ void repl(Ctx *c);
     for (unsigned _i = 0; _i < _size && (unsigned char)((_ptr)[_i]) != '\0'; _i++)\
         printf("%c", (unsigned char)((_ptr)[_i]));
 
+#define NOMFORTH_SYSTEM_MESSAGE(_prepended_string, _appended_statement)\
+do { printf("{"); printf(_prepended_string); _appended_statement; printf("}\n"); } while(0)
 
 #define     IMMEDIATE_WORD 1
 #define        NORMAL_WORD 0

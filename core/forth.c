@@ -23,10 +23,7 @@ void nf_memcpy(void *dest, const void *src, unsigned len) {
         ((char *)dest)[i] = ((char *)src)[i];
 }
 
-#define NOMFORTH_SYSTEM_MESSAGE(_prepended_string, _appended_statement)\
-{ printf("{"); printf(_prepended_string); _appended_statement; printf("}\n"); }
-
-#define SCHECK(__var, __message) if (c->m[__var] == MEM_START(__var)) { printf("{%s stack underflow. ABORTING}", __message); exit(1); }
+#define SCHECK(__var, __message) if (c->m[__var] == MEM_START(__var)) { printf("{%s stack underflow. ABORTING}\n", __message); exit(1); }
 
 void dataPush(Ctx *c, Cell v) { c->m[c->m[c->dstack_ptr]] = v;  c->m[c->dstack_ptr] += 1; }
 void funcPush(Ctx *c, Cell v) { c->m[c->m[c->fstack_ptr]] = v;  c->m[c->fstack_ptr] += 1; }
@@ -93,32 +90,9 @@ Cell findWord(Ctx *c, const Cell *s, unsigned s_size) {
     return curr;
 }
 
-
-// First occurence of x in str, or -1 if it does not occur
-static int findChar(char x, char *str) {
-    for (unsigned i = 0; str[i] != '\0'; i++)
-        if (str[i] == x) return i;
-    return -1;
-}
-
-// Removes first occurence of x from str
-// Returns position of deletal, or -1 if not found
-static int delChar(char x, char *str) {
-    int pos = findChar(x, str);
-    if (pos == -1) {
-        return -1;
-    } else {
-        unsigned i;
-        for (i = pos; str[i+1] != '\0'; i++)
-            str[i] = str[i+1];
-        str[i] = '\0';
-        return pos;
-    }
-}
-
 void executePrimitive(Ctx *c, Cell id) {
-    if (primTable[id].func == NULL) printf("{WARNING: Undefined primitive 0x%X}\n", id);
-    else primTable[id].func(c);
+    if (primTable[id].func == NULL) { NOMFORTH_SYSTEM_MESSAGE("WARNING: Undefined primitive ", printf("0x%X", id)); }
+    else { primTable[id].func(c); }
 }
 
 void executeWord(Ctx *c, Cell w) {
@@ -279,111 +253,87 @@ int consumeWord(Cell **s, const Cell *max, unsigned char target, _Bool skip_lead
     else return (now-orig);
 }
 
-_Bool parseNumber(unsigned base, unsigned exp, Cell *lorig, unsigned w_size, unsigned *retnum) {
-    char tmpstring[w_size+1];
-    char_cell_memcpy(tmpstring, lorig, w_size);
-    tmpstring[w_size] = '\0';
-
-    int pos = delChar('.', tmpstring);
-    enum {Valid_Fixed_Point, Invalid_Fixed_Point, Valid_Integer, Invalid_Integer}
-        number_validity = Valid_Integer;
-    if (pos >= 0) { //dot found
-        if ((int)exp < 0) {
-            // Numbers can only contain dots if the current exponent of the base is negative
-            int number_of_digits_after_point = (w_size-1)-pos;
-            if (number_of_digits_after_point == -(int)exp) {
-                number_validity = Valid_Fixed_Point;
-            } else {
-                number_validity = Invalid_Fixed_Point;
-            }
-        } else {
-            // Else, it's not allowed to have dots
-            number_validity = Invalid_Integer;
-        }
-    } else { // no dots
-        // Dots are mandatory if the exponent of the base is 0 or positive
-        if ((int)exp >= 0) {
-            number_validity = Valid_Integer;
-        } else {
-            number_validity = Invalid_Fixed_Point;
-        }
-    }
-
-    char *endptr;
-    Cell val = strtol(tmpstring, &endptr, base);
-
-    unsigned converted_num_size = endptr-tmpstring;
-    _Bool valid = number_validity == Valid_Fixed_Point || number_validity == Valid_Integer;
-    if (valid && converted_num_size == w_size - ((pos >= 0) ? 1 : 0)) {
-        *retnum = val;
-        return 1; // All okay
-    } else {
-        return 0; // Not okay
-    }
-}
-
 int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
     _Bool do_continue = 1;
     _Bool was_there_error = 0;
     c->input_start = src_start;
     c->input_end = c->input_start+src_size-1;
     c->input = src_start;
-    while(do_continue) {
-        int w_size_raw = consumeWord(&c->input, c->input_end, ' ', 1);
+    while(do_continue && c->input <= c->input_end && *c->input != '\0' && *c->input != '\n') {
+        // The code vector array has the form: C0 A0 C1 A1 C2 A2 ...
+        // Where Cx represents the XT of a safe condition checker that leaves a pointer to extra data on the stack, and one extra cell with more info
+        // Cx leaves 0 (followed by some garbage) on the stack if its condition failed, in this case it must have restored any global state it altered
+        // Where Ax represents the XT of an action that can perform any operation it wishes on the input buffer and the system in general.
+        // Ax must consume the cell left by Cx and leave a boolean on the stack indicating if the loop should continue or not
+        // For each value of x starting from 0 to the array size, sequentially:
+        // - If the address of Cx is 0, throw an unknown word error
+        // - Else If the end of the array is reached, throw an unknown word error
+        // - Else, call Cx. A can leave two cells on the stack
+        //   - If Cx leaves a zero followed by anything on the stack, pop both and loop again with x = x+1
+        //   - Else if it leaves a non-zero followed by anything, call Ax.
+        //     Then, pop the result of Ax from the stack
+        //      - If it's 0, break out of the loop
+        //      - Else If it's 1, break out of the loop with an error condition
+        //      - Else, continue
+        _Bool fallback = c->m[c->parsing_vector_start] == 0;
+        void (*vm_memory[4])(Ctx *c) = {PRIM(find_outer),
+                                        PRIM(handle_word_outer),
+                                        PRIM(parse_number_outer),
+                                        PRIM(handle_number_outer)};
 
-        // This word is the last of the line, take absolute value to ake its length
-        if (w_size_raw < 0) { do_continue = 0; w_size_raw = -w_size_raw; }
-        unsigned w_size = w_size_raw;
+        Cell vec_start;
+        Cell vec_len;
+        // If the vector starts with a 0, instead execute the default non-overridden code:
+        // C0 is FIND-OUTER, A0 is HANDLE-WORD-OUTER, C1 is PARSE-NUMBER-OUTER, A1 is HANDLE-NUMBER-OUTER
+        if (fallback) { vec_start = 0;                       vec_len = COUNTOF(vm_memory); }
+        else          { vec_start = c->parsing_vector_start; vec_len = c->parsing_vector_length; }
 
-        // No more characters available
-        if (w_size == 0) break;
+        _Bool success = 0;
+        for (Cell i = vec_start;  i < vec_start + vec_len - 1; i += 2) {
+            // If we reach 0 in RAM with the loop counter and are not in fallback mode, end loop
+            if (!fallback && c->m[i] == 0)
+                break;
 
-        Cell *lorig = c->input-w_size;
+            if (fallback) vm_memory[i](c);
+            else          executeWord(c, c->m[i]);
 
-        Cell w = findWord(c, lorig, w_size);
-        if (w != 0) {
-            // - Highest bit is for auxiliary info,
-            // - Second highest is for TCO permissions,
-            // - Third highest is 0 if it is forbidden to interpret the word,
-            // - Fourth highest is for immediacy info
-            _Bool priority = CHECK_IMM(GET_HEADER(w));
-            _Bool allow_interpreting = CHECK_NO_WARN(GET_HEADER(w));
-            if (priority || COMPILE_STATE == 0) {
-                if (priority && !allow_interpreting && COMPILE_STATE == 0) {
-                    NOMFORTH_SYSTEM_MESSAGE("ERROR: CAN NOT INTERPRET COMPILE-ONLY WORD ",
-                                            PRINT_CELL_STRING(lorig, w_size))
-                    do_continue = 0;
-                    was_there_error = 1;
-                } else {
-                    // Mark that lets the inner interpreter know
-                    //  it's going back to the outer interpreter
-                    funcPush(c, 0);
-                    executeWord(c, w);
-                }
+            Cell result2 = dataPop(c);
+            Cell result1 = dataPop(c);
+
+            if (result1 == 0) continue;
+            else             success = 1;
+
+            dataPush(c, result1);
+            dataPush(c, result2);
+
+            if (fallback) vm_memory[i+1](c);
+            else          executeWord(c, c->m[i+1]);
+
+            Cell action_result = dataPop(c);
+            if (action_result == 0) {
+                break;
+            } else if (action_result == 1) {
+                do_continue = 0;
+                was_there_error = 1;
+                break;
             } else {
-                dataPush(c, w);
-                PRIM(comma)(c);
+                continue;
             }
-        } else {
-            *c->input = '\0';
+        }
 
-            unsigned parsed_num;
-            _Bool is_number = parseNumber(BASE_VAL, EXP_VAL, lorig, w_size, &parsed_num);
-
-            if (do_continue != 0) *c->input = ' ';
-
-            if (is_number) {
-                if (COMPILE_STATE == 0)
-                    dataPush(c, parsed_num);
-                else {
-                    // Tag for literal
-                    dataPush(c, t_num); PRIM(comma)(c);
-                    // Actual value
-                    dataPush(c, parsed_num); PRIM(comma)(c);
-                }
-            } else {
+        if (success == 0) {
+            // TODO: figure out how to cleanly implement the code to report 'no word found',
+            // since now we don't know exactly what the user is consuming, probs vectorize it too tbh
+            // this works fine for cases where you're extending the normal parser
+            // it will give wonky output and mess up your parsing in cases
+            // where you're parsing with a delimited other than ' ', such as ';' or '\n' or whatever 
+            int w_size = consumeWord(&c->input, c->input_end, ' ', 1);
+            if (w_size != 0) {
+                if (w_size < 0)
+                    w_size = -w_size;
+                Cell *lorig = c->input-w_size;
                 NOMFORTH_SYSTEM_MESSAGE("ERROR: unknown word ",
-                                        PRINT_CELL_STRING(lorig, w_size))
+                                        PRINT_CELL_STRING(lorig, (unsigned)w_size));
                 do_continue = 0;
                 was_there_error = 1;
             }
@@ -392,6 +342,7 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
     if (!was_there_error && !silent) printf(" {OK}\n");
     return was_there_error;
 }
+
 
 void init(Ctx *c) {
     c->base_ptr = BASE;
@@ -406,7 +357,10 @@ void init(Ctx *c) {
     c->heap_start = HEAP_START;
     c->inbuf_start = INBUF_START;
 
-    c->m = malloc(MEM_MAX*sizeof(Cell));
+    c->parsing_vector_start = PARSING_VECTOR_START;
+    c->parsing_vector_length = PARSING_VECTOR_LENGTH;
+
+    c->m = calloc(MEM_MAX*sizeof(Cell), 1);
 
     c->m[c->base_ptr] = 10;
     c->m[c->exp_ptr] = 0;
@@ -421,6 +375,7 @@ void init(Ctx *c) {
     initPrimitives(c);
     initConstantWords(c);
 }
+
 void initPrimitives(Ctx *c) {
     for (unsigned i = 0; i < PRIM_NUM; i++) {
         if (primTable[i].func != NULL) {
@@ -501,7 +456,7 @@ void repl(Ctx *c) {
         lineno += 1;
 
         unsigned lsize = char_strlen(line)-1; // Exclude terminating newline
-        if (char_strlen(line) <= 0)
+        if (char_strlen(line) == 0)
             continue;
 
         cell_char_memcpy(&c->m[c->inbuf_start], line, lsize);
@@ -513,7 +468,7 @@ void repl(Ctx *c) {
 }
 
 #ifndef NOMFORTH_LIB
-Ctx  context;
+Ctx  context = {0};
 int main(void) {
     init(&context);
     printf("Welcome to nomForth!\nTo exit, type BYE.\n");

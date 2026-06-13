@@ -32,6 +32,12 @@ MAKEPRIM(word);
 MAKEPRIM(parse);
 MAKEPRIM(parse_name);
 MAKEPRIM(find);
+
+MAKEPRIM(find_outer);
+MAKEPRIM(handle_word_outer);
+MAKEPRIM(parse_number_outer);
+MAKEPRIM(handle_number_outer);
+
 MAKEPRIM(is);
 MAKEPRIM(defer);
 MAKEPRIM(postpone);
@@ -148,6 +154,12 @@ MAKEPRIM(rtuck);
     {PRIM(word),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "WORD"},      \
     {PRIM(parse),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "PARSE"},     \
     {PRIM(parse_name),      NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "PARSE-NAME"},\
+                                                                                       \
+    {PRIM(find_outer),     NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "FIND-OUTER"},\
+    {PRIM(handle_word_outer),NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "HANDLE-WORD-OUTER"},\
+    {PRIM(parse_number_outer),NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "PARSE-NUMBER-OUTER"},\
+    {PRIM(handle_number_outer),NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "HANDLE-NUMBER-OUTER"},\
+                                                                                       \
     {PRIM(find),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "FIND"},      \
     {PRIM(is),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "IS"},        \
     {PRIM(defer),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "DEFER"},     \

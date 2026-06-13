@@ -32,6 +32,16 @@ extern int lineno;
     else { nonzero_size; } \
     post_action
 
+// Like CONSUMER, but for outer interpreter conditions.
+// The difference is in the case of size-zero words, we abort per the outer interpreter
+// extensibility protocol (lay two zeros on the data stack, then abort)
+#define CONSUMER_CONDITION(ch, post_action, nonzero_size) \
+    int w_size = consumeWord(&c->input, c->input_end, ch, 1); \
+    if (w_size < 0) { w_size = -w_size; } \
+    if (w_size == 0) { dataPush(c, 0); dataPush(c, 0); return; } \
+    else { nonzero_size; } \
+    post_action
+
 /* The forth core words: declare a new word, and end it */
 MAKEPRIM(colon) {
     CONSUMER(' ', C_LOR(), , WARNING(colon));
@@ -110,7 +120,7 @@ MAKEPRIM(char) {
     dataPush(c, lorig[0]);
 }
 MAKEPRIM(word) {
-    CONSUMER((char)dataPop(c), C_LOR(), , WARNING(word))
+    CONSUMER((char)dataPop(c), C_LOR(), , WARNING(word));
     Cell created_string = addToYarnball(c, lorig, w_size);
     dataPush(c, created_string);
 }
@@ -132,8 +142,164 @@ MAKEPRIM(find) {
     Cell obtained_str = dataPop(c);
     Cell found_word = findWord(c, &c->m[obtained_str+1], c->m[obtained_str]-1);
     if (found_word == 0) { dataPush(c, obtained_str); dataPush(c, 0); }
-    else { dataPush(c, found_word); dataPush(c, ((c->m[found_word+2] >> 24) != 0) ? 1 : -1); }
+    else { dataPush(c, found_word); dataPush(c, (CHECK_IMM(GET_HEADER(found_word)) != 0) ? 1 : -1); }
 }
+
+MAKEPRIM(find_outer) {
+    Cell *old_input = c->input;
+
+    CONSUMER_CONDITION(' ', C_LOR(), );
+    Cell found_word = findWord(c, lorig, w_size);
+
+    if (found_word == 0) {
+        dataPush(c, 0);
+        dataPush(c, 0);
+
+        // We restore the input position
+        // because outer interpreter condition functions
+        // are supposed to not affect global state when they fail
+        c->input = old_input;
+    } else {
+        dataPush(c, found_word);
+        dataPush(c, (CHECK_IMM(GET_HEADER(found_word)) != 0) ? 1 : -1);
+    }
+}
+
+MAKEPRIM(handle_word_outer) {
+    // Not used becasue we can extract it anyways
+    Cell _immediacy_info = dataPop(c);
+
+    Cell w = dataPop(c);
+
+    // - Highest bit is for auxiliary info,
+    // - Second highest is for TCO permissions,
+    //- Third highest is 0 if it is forbidden to interpret the word,
+    // - Fourth highest is for immediacy info
+    _Bool priority = CHECK_IMM(GET_HEADER(w));
+    _Bool allow_interpreting = CHECK_NO_WARN(GET_HEADER(w));
+    if (priority || COMPILE_STATE == 0) {
+        if (priority && !allow_interpreting && COMPILE_STATE == 0) {
+            NOMFORTH_SYSTEM_MESSAGE(
+            "ERROR: CAN NOT INTERPRET COMPILE-ONLY WORD ",
+            PRINT_CELL_STRING(&c->m[GET_NAME(w)+1],
+                             c->m[GET_NAME(w)]-1));
+            dataPush(c, 1); // For the outer interpreter vector loop
+        } else {
+            // Mark that lets the inner interpreter know
+            //  it's going back to the outer interpreter
+            funcPush(c, 0);
+            executeWord(c, w);
+
+            dataPush(c, 0); // For the outer interpreter vector loop
+        }
+    } else {
+        dataPush(c, w);
+        PRIM(comma)(c);
+
+        dataPush(c, 0); // For the outer interpreter vector loop
+    }
+}
+
+
+// First occurence of x in str, or -1 if it does not occur
+static int findChar(char x, char *str) {
+    for (unsigned i = 0; str[i] != '\0'; i++)
+        if (str[i] == x) return i;
+    return -1;
+}
+// Removes first occurence of x from str
+// Returns position of deletal, or -1 if not found
+static int delChar(char x, char *str) {
+    int pos = findChar(x, str);
+    if (pos == -1) {
+        return -1;
+    } else {
+        unsigned i;
+        for (i = pos; str[i+1] != '\0'; i++)
+            str[i] = str[i+1];
+        str[i] = '\0';
+        return pos;
+    }
+}
+static _Bool parseNumber(unsigned base, unsigned exp, const Cell *lorig, unsigned w_size, unsigned *retnum) {
+    char tmpstring[w_size+1];
+    char_cell_memcpy(tmpstring, lorig, w_size);
+    tmpstring[w_size] = '\0';
+
+    int pos = delChar('.', tmpstring);
+    enum {Valid_Fixed_Point, Invalid_Fixed_Point, Valid_Integer, Invalid_Integer}
+        number_validity = Valid_Integer;
+    if (pos >= 0) { //dot found
+        if ((int)exp < 0) {
+            // Numbers can only contain dots if the current exponent of the base is negative
+            int number_of_digits_after_point = (w_size-1)-pos;
+            if (number_of_digits_after_point == -(int)exp) {
+                number_validity = Valid_Fixed_Point;
+            } else {
+                number_validity = Invalid_Fixed_Point;
+            }
+        } else {
+            // Else, it's not allowed to have dots
+            number_validity = Invalid_Integer;
+        }
+    } else { // no dots
+        // Dots are mandatory if the exponent of the base is 0 or positive
+        if ((int)exp >= 0) {
+            number_validity = Valid_Integer;
+        } else {
+            number_validity = Invalid_Fixed_Point;
+        }
+    }
+
+    char *endptr;
+    Cell val = strtol(tmpstring, &endptr, base);
+
+    unsigned converted_num_size = endptr-tmpstring;
+    _Bool valid = number_validity == Valid_Fixed_Point || number_validity == Valid_Integer;
+    if (valid && converted_num_size == w_size - ((pos >= 0) ? 1 : 0)) {
+        *retnum = val;
+        return 1; // All okay
+    } else {
+        return 0; // Not okay
+    }
+}
+
+MAKEPRIM(parse_number_outer) {
+    Cell *old_input = c->input;
+
+    CONSUMER_CONDITION(' ', C_LOR(), );
+    unsigned parsed_num;
+    _Bool is_number = parseNumber(BASE_VAL, EXP_VAL, lorig, w_size, &parsed_num);
+
+    if (is_number) {
+        dataPush(c, 1);
+        dataPush(c, parsed_num);
+    } else {
+        dataPush(c, 0);
+        dataPush(c, 0);
+
+        // We restore the input position
+        // because outer interpreter condition functions
+        // are supposed to not affect global state when they fail
+        c->input = old_input;
+    }
+}
+
+MAKEPRIM(handle_number_outer) {
+    Cell number = dataPop(c);
+    Cell _is_number = dataPop(c);
+
+    if (COMPILE_STATE == 0) {
+        dataPush(c, number);
+    } else {
+        // Tag for literal
+        dataPush(c, t_num); PRIM(comma)(c);
+        // Actual value
+        dataPush(c, number); PRIM(comma)(c);
+    }
+    dataPush(c, 0); // For the outer interpreter vector loop
+}
+
 MAKEPRIM(is) {
     CONSUMER(' ', C_LOR(), , WARNING(is));
     Cell assigned_word = findWord(c, lorig, w_size);
