@@ -300,6 +300,16 @@ MAKEPRIM(handle_number_outer) {
     dataPush(c, 0); // For the outer interpreter vector loop
 }
 
+MAKEPRIM(error_handler_default) {
+    CONSUMER(' ', C_LOR(), );
+
+    if (w_size == 0)
+        return;
+
+    NOMFORTH_SYSTEM_MESSAGE("ERROR: unknown word ",
+                            PRINT_CELL_STRING(lorig, (unsigned)w_size));
+}
+
 MAKEPRIM(is) {
     CONSUMER(' ', C_LOR(), , WARNING(is));
     Cell assigned_word = findWord(c, lorig, w_size);

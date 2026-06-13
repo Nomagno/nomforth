@@ -322,20 +322,12 @@ int interpret(Ctx *c, Cell *src_start, unsigned src_size, _Bool silent) {
         }
 
         if (success == 0) {
-            // TODO: figure out how to cleanly implement the code to report 'no word found',
-            // since now we don't know exactly what the user is consuming, probs vectorize it too tbh
-            // this works fine for cases where you're extending the normal parser
-            // it will give wonky output and mess up your parsing in cases
-            // where you're parsing with a delimited other than ' ', such as ';' or '\n' or whatever 
-            int w_size = consumeWord(&c->input, c->input_end, ' ', 1);
-            if (w_size != 0) {
-                if (w_size < 0)
-                    w_size = -w_size;
-                Cell *lorig = c->input-w_size;
-                NOMFORTH_SYSTEM_MESSAGE("ERROR: unknown word ",
-                                        PRINT_CELL_STRING(lorig, (unsigned)w_size));
-                do_continue = 0;
-                was_there_error = 1;
+            // The error handler is the XT held in the address before the start of the code vector array
+            Cell error_handler = c->m[c->parsing_vector_start-1];
+            if (error_handler == 0) {
+                PRIM(error_handler_default)(c);
+            } else {
+                executeWord(c, error_handler);
             }
         }
     }
@@ -437,6 +429,10 @@ void initConstantWords(Ctx *c) {
     ADD_LOADER("C_HEAP_ADR", HEAP_START);
     ADD_LOADER("C_YARNBALL_ADR", YARNBALL_START);
     ADD_LOADER("C_INBUF_ADR", INBUF_START);
+
+    ADD_LOADER("C_PARSING_VECTOR_START_ADR", PARSING_VECTOR_START);
+    ADD_LOADER("C_PARSING_VECTOR_LENGTH", PARSING_VECTOR_LENGTH);
+
 
     ADD_LOADER("C_HEADER_SIZE", HEADER_SIZE);
 }

@@ -112,7 +112,7 @@ extern PrimitiveData primTable[PRIM_NUM];
 #define FLAGS 0x0006
 #define BASE  0x0007
 #define EXP  0x0008
-
+// Address 9: error hander of the parsing vector
 #define PARSING_VECTOR_START 0x000A
 #define PARSING_VECTOR_LENGTH 16
 

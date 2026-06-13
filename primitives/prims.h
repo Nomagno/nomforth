@@ -37,6 +37,7 @@ MAKEPRIM(find_outer);
 MAKEPRIM(handle_word_outer);
 MAKEPRIM(parse_number_outer);
 MAKEPRIM(handle_number_outer);
+MAKEPRIM(error_handler_default);
 
 MAKEPRIM(is);
 MAKEPRIM(defer);
@@ -159,6 +160,7 @@ MAKEPRIM(rtuck);
     {PRIM(handle_word_outer),NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "HANDLE-WORD-OUTER"},\
     {PRIM(parse_number_outer),NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "PARSE-NUMBER-OUTER"},\
     {PRIM(handle_number_outer),NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "HANDLE-NUMBER-OUTER"},\
+    {PRIM(error_handler_default),NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "ERROR-HANDLER-DEFAULT"},\
                                                                                        \
     {PRIM(find),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "FIND"},      \
     {PRIM(is),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "IS"},        \
