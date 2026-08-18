@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-#define _GNU_SOURCE
 #include <dlfcn.h>
 #include "prims.h"
 
@@ -92,12 +91,17 @@ MAKEPRIM(worddoes) {
     appendWord(c, CA(appended_w), 1);
     appendWord(c, CA(t_end_notailcall), 1); // Tail calls break the kind of callstack manipulation we do with worddoesprim
 }
+
+static void *dlopen_handle = NULL;
 MAKEPRIM(getffi) {
+    if (dlopen_handle == NULL) {
+        void *dlopen_handle = dlopen(NULL, 0);
+    }
     CONSUMER(' ', C_LOR(), , WARNING(getffi));
     char tmp_str[w_size+1];
     char_cell_memcpy(tmp_str, lorig, w_size);
     tmp_str[w_size] = '\0';
-    dataPush(c, (uintptr_t)dlsym(RTLD_DEFAULT, tmp_str));
+    dataPush(c, (uintptr_t)dlsym(dlopen_handle, tmp_str));
 }
 
 // nomforth must be compiled as 32-bit for callffi specifically to work properly
