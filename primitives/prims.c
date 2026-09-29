@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <dlfcn.h>
+#include <math.h>
 #include "prims.h"
 
 #define D_SAVE() Cell saved_d = dataPop(c)
@@ -231,9 +232,16 @@ static _Bool parseNumber(unsigned base, unsigned exp, const Cell *lorig, unsigne
     tmpstring[w_size] = '\0';
 
     int pos = delChar('.', tmpstring);
-    enum {Valid_Fixed_Point, Invalid_Fixed_Point, Valid_Integer, Invalid_Integer}
+    _Bool found_dot = pos >= 0;
+
+    _Bool starts_with_number = lorig[0] >= '0' && lorig[0] <= '9';
+    _Bool starts_with_minus = lorig[0] == '-';
+    _Bool ends_with_lowercase_f = lorig[w_size-1] == 'f';
+    _Bool tentatively_float = (starts_with_number || starts_with_minus) && ends_with_lowercase_f;
+
+    enum {Valid_Fixed_Point=0, Valid_Floating_Point, Invalid_Fixed_Point, Valid_Integer, Invalid_Integer}
         number_validity = Valid_Integer;
-    if (pos >= 0) { //dot found
+    if (found_dot) { //dot found
         if ((int)exp < 0) {
             // Numbers can only contain dots if the current exponent of the base is negative
             int number_of_digits_after_point = (w_size-1)-pos;
@@ -241,10 +249,16 @@ static _Bool parseNumber(unsigned base, unsigned exp, const Cell *lorig, unsigne
                 number_validity = Valid_Fixed_Point;
             } else {
                 number_validity = Invalid_Fixed_Point;
+                if (tentatively_float) {
+                    number_validity = Valid_Floating_Point;
+                }
             }
         } else {
             // Else, it's not allowed to have dots
             number_validity = Invalid_Integer;
+            if (tentatively_float) {
+                number_validity = Valid_Floating_Point;
+            }
         }
     } else { // no dots
         // Dots are mandatory if the exponent of the base is 0 or positive
@@ -259,11 +273,24 @@ static _Bool parseNumber(unsigned base, unsigned exp, const Cell *lorig, unsigne
     Cell val = strtol(tmpstring, &endptr, base);
 
     unsigned converted_num_size = endptr-tmpstring;
-    _Bool valid = number_validity == Valid_Fixed_Point || number_validity == Valid_Integer;
-    if (valid && converted_num_size == w_size - ((pos >= 0) ? 1 : 0)) {
+    _Bool valid = number_validity == Valid_Fixed_Point
+                    || number_validity == Valid_Integer
+                    || number_validity == Valid_Floating_Point;
+    if (valid && converted_num_size == w_size - found_dot) {
         *retnum = val;
         return 1; // All okay
     } else {
+        if (valid && converted_num_size + 1 == w_size - found_dot && tentatively_float) {
+            char tmpstring[w_size+1];
+            char_cell_memcpy(tmpstring, lorig, w_size);
+            tmpstring[w_size] = '\0';
+            // Pushed a float, all okay
+            char *endptr;
+            Cell val = *(Cell *)((float *)&(float){strtof(tmpstring, &endptr)});
+            *retnum = val;
+            return 1;
+
+        }
         return 0; // Not okay
     }
 }
@@ -367,13 +394,20 @@ MAKEPRIM(free){ Cell mem = dataPop(c); if (mem == 0) return; OA_free(mem - c->he
 
 /* From here on it's all trivial boilerplate for C arithmetic operations and I/O*/
 /*---------------------------------------------*/
+#define _FLT(_x) (*((float *)&(Cell){_x}))
+#define _INT(_x) (*((Cell *)&(float){_x}))
+
+
 #define INIT(_name) Cell _name = dataPop(c);
 #define RINIT(_name) Cell _name = funcPop(c);
 #define INIT_I(_name) int32_t _name = dataPop(c);
 #define PUSH(...) dataPush(c, __VA_ARGS__)
+#define PUSHF(...) dataPush(c, _INT(__VA_ARGS__))
 #define RPUSH(...) funcPush(c, __VA_ARGS__)
 #define OP_UN(_name, ...) MAKEPRIM(_name) { INIT_I(w1); PUSH(__VA_ARGS__); }
 #define OP_BIN(_name, ...) MAKEPRIM(_name) { INIT_I(w2); INIT_I(w1); PUSH(__VA_ARGS__); }
+#define OP_UNF(_name, ...) MAKEPRIM(_name) { INIT_I(w1); PUSHF(__VA_ARGS__); }
+#define OP_BINF(_name, ...) MAKEPRIM(_name) { INIT_I(w2); INIT_I(w1); PUSHF(__VA_ARGS__); }
 
 #define ENABLE_HACK
 #include "ugly_stackeffects.h"
@@ -385,12 +419,21 @@ MAKEPRIM(free){ Cell mem = dataPop(c); if (mem == 0) return; OA_free(mem - c->he
 #define EFF(ni, no, _name, ...) EFF_##ni(_name, ;, ;, P_##no(__VA_ARGS__))
 #define REFF(ni, no, _name, ...) REFF_##ni(_name, R_SAVE(), R_RESTORE(), RP_##no(__VA_ARGS__))
 
-
 OP_BIN(add,    w1+w2);
 OP_BIN(minus,  w1-w2);
 OP_BIN(mult,   w1*w2);
 OP_BIN(div,    w1/w2);
 OP_BIN(mod,    w1%w2);
+
+OP_BINF(fadd,    _FLT(w1)+_FLT(w2));
+OP_BINF(fminus,  _FLT(w1)-_FLT(w2));
+OP_BINF(fmult,   _FLT(w1)*_FLT(w2));
+OP_BINF(fdiv,    _FLT(w1)/_FLT(w2));
+OP_BINF(fmod,    fmod(_FLT(w1),_FLT(w2)));
+OP_UNF(fsqrt,    sqrt(_FLT(w1)));
+OP_UN(f_to_i,    _FLT(w1));
+OP_UNF(i_to_f,    (float){w1});
+
 OP_BIN(rshift, w1>>w2);
 OP_BIN(lshift, w1<<w2);
 OP_BIN(max,    (w1>w2) ? w1 : w2);
@@ -398,6 +441,7 @@ OP_BIN(min,    (w1<w2) ? w1 : w2);
 OP_BIN(and,    w1&w2);
 OP_BIN(or,     w1|w2);
 OP_BIN(xor,    w1^w2);
+
 OP_BIN(eq,     BOOL(w1==w2));
 OP_BIN(neq,    BOOL(w1!=w2));
 OP_BIN(le,     BOOL(w1<w2));
@@ -405,7 +449,14 @@ OP_BIN(leq,    BOOL(w1<=w2));
 OP_BIN(gr,     BOOL(w1>w2));
 OP_BIN(geq,    BOOL(w1>=w2));
 
+OP_BINF(fle,     BOOL(_FLT(w1)<_FLT(w2)));
+OP_BINF(fleq,    BOOL(_FLT(w1<=_FLT(w2))));
+OP_BINF(fgr,     BOOL(_FLT(w1>_FLT(w2))));
+OP_BINF(fgeq,    BOOL(_FLT(w1)>=_FLT(w2)));
+
 OP_UN(abs,         (w1 < 0) ? -w1 : w1);
+OP_UNF(fabs,        (_FLT(w1) < 0.0) ? -_FLT(w1) : _FLT(w1));
+
 OP_UN(arith_not,   -w1);
 OP_UN(bitwise_not, ~w1);
 OP_UN(logical_not,  w1 ? BOOL(0) : BOOL(1));
@@ -530,6 +581,7 @@ MAKEPRIM(spaces) {
     }
 }
 MAKEPRIM(dot) { printf(" %d", dataPop(c)); }
+MAKEPRIM(fdot) { printf(" %f", _FLT(dataPop(c))); }
 MAKEPRIM(ddot) { printf(" %lld", ((int64_t)dataPop(c) << 32) + (uint32_t)dataPop(c)); }
 MAKEPRIM(udot) { printf(" %u", dataPop(c)); }
 MAKEPRIM(xdot) { printf(" %08X", dataPop(c)); }
@@ -557,6 +609,18 @@ MAKEPRIM(dotstack) {
     printf(" | s <%u>:", stacksize);
     for (unsigned i = 0; i < stacksize; i++) {
         printf(" %d", c->m[MEM_START(c->dstack_ptr)+i]);
+    }
+    printf(" |");
+}
+MAKEPRIM(fdotstackslice) {
+    unsigned size = dataPop(c);
+    unsigned stacksize = c->m[c->dstack_ptr]-(MEM_START(c->dstack_ptr));
+    if (size < stacksize)
+        stacksize = size;
+
+    printf(" | s <%u>:", stacksize);
+    for (unsigned i = 0; i < stacksize; i++) {
+        printf(" %f", _FLT(c->m[MEM_START(c->dstack_ptr)+i]));
     }
     printf(" |");
 }

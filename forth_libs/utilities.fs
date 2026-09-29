@@ -167,12 +167,12 @@
 ( OUTPUT: 5 ok)
 
 ( Local registers code)
-30 ARRAY lspA
+40 ARRAY lspA
 VARIABLE lsp
 ( "locals stack pointer")
 lspA lsp !
 
-: LOCALS_FRAME_SIZE 3 ;
+: LOCALS_FRAME_SIZE 4 ;
 
 ( If you look at this code, the first LOCALS_FRAME_SIZE)
 ( bytes of the locals stack are actually)
@@ -186,10 +186,12 @@ lspA CONSTANT lsp_start
 : >a ( n -- ) lsp @ 0 + ! ;
 : >b ( n -- ) lsp @ 1 + ! ;
 : >c ( n -- ) lsp @ 2 + ! ;
+: >d ( n -- ) lsp @ 3 + ! ;
 
 : a> ( -- n ) lsp @  0 + @ ;
 : b> ( -- n ) lsp @  1 + @ ;
 : c> ( -- n ) lsp @  2 + @ ;
+: d> ( -- n ) lsp @  3 + @ ;
 
 ( -- , starts local-mode word, puts the cleanup code in the return stack)
 : ::
@@ -216,6 +218,15 @@ lspA CONSTANT lsp_start
       PPW >c
       PPW >b
       PPW >a
+;
+
+( word takes 4 parameters into A B C D)
+: ::4
+      ::
+      PPW >c
+      PPW >b
+      PPW >a
+      PPW >d
 ;
 
 ( example usage that prints 2 1:)

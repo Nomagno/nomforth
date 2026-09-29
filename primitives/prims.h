@@ -61,6 +61,17 @@ MAKEPRIM(mult);
 MAKEPRIM(div);
 MAKEPRIM(div);
 MAKEPRIM(mod);
+
+MAKEPRIM(fadd);
+MAKEPRIM(fminus);
+MAKEPRIM(fmult);
+MAKEPRIM(fdiv);
+MAKEPRIM(fdiv);
+MAKEPRIM(fmod);
+MAKEPRIM(fsqrt);
+MAKEPRIM(f_to_i);
+MAKEPRIM(i_to_f);
+
 MAKEPRIM(rshift);
 MAKEPRIM(lshift);
 MAKEPRIM(max);
@@ -71,6 +82,7 @@ MAKEPRIM(logical_not);
 MAKEPRIM(and);
 MAKEPRIM(or);
 MAKEPRIM(xor);
+
 MAKEPRIM(abs);
 MAKEPRIM(eq);
 MAKEPRIM(neq);
@@ -79,6 +91,13 @@ MAKEPRIM(leq);
 MAKEPRIM(gr);
 MAKEPRIM(geq);
 
+MAKEPRIM(fabs);
+
+MAKEPRIM(fle);
+MAKEPRIM(fleq);
+MAKEPRIM(fgr);
+MAKEPRIM(fgeq);
+
 MAKEPRIM(utime);
 MAKEPRIM(emit);
 MAKEPRIM(safe_emit);
@@ -86,12 +105,14 @@ MAKEPRIM(type);
 MAKEPRIM(cr);
 MAKEPRIM(spaces);
 MAKEPRIM(dot);
+MAKEPRIM(fdot);
 MAKEPRIM(ddot);
 MAKEPRIM(udot);
 MAKEPRIM(xdot);
 MAKEPRIM(at_xy);
 MAKEPRIM(dotmem);
 MAKEPRIM(dotstack);
+MAKEPRIM(fdotstackslice);
 MAKEPRIM(udotstack);
 MAKEPRIM(dotstackret);
 MAKEPRIM(udotstackret);
@@ -185,6 +206,14 @@ MAKEPRIM(rtuck);
     {PRIM(mult),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "*"},         \
     {PRIM(div),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "/"},         \
     {PRIM(mod),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "MOD"},       \
+    {PRIM(fadd),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f+"},         \
+    {PRIM(fminus),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f-"},         \
+    {PRIM(fmult),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f*"},         \
+    {PRIM(fdiv),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f/"},         \
+    {PRIM(fmod),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "fMOD"},       \
+    {PRIM(fsqrt),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "fSQRT"},       \
+    {PRIM(f_to_i),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f->i"},       \
+    {PRIM(i_to_f),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "i->f"},       \
     {PRIM(rshift),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "RSHIFT"},    \
     {PRIM(lshift),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "LSHIFT"},    \
     {PRIM(max),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "MAX"},       \
@@ -203,6 +232,12 @@ MAKEPRIM(rtuck);
     {PRIM(gr),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ">"},         \
     {PRIM(geq),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ">="},        \
                                                                                        \
+    {PRIM(fabs),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "fABS"},       \
+    {PRIM(fle),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f<"},         \
+    {PRIM(fleq),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f<="},        \
+    {PRIM(fgr),              NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f>"},         \
+    {PRIM(fgeq),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "f>="},        \
+                                                                                       \
     {PRIM(utime),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "UTIME"},     \
     {PRIM(emit),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "EMIT"},      \
     {PRIM(safe_emit),       NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "SAFE_EMIT"}, \
@@ -212,10 +247,12 @@ MAKEPRIM(rtuck);
     {PRIM(dot),             NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "."},         \
     {PRIM(ddot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "D."},        \
     {PRIM(udot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "U."},        \
+    {PRIM(fdot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "F."},        \
     {PRIM(xdot),            NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "X."},        \
     {PRIM(at_xy),           NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "AT-XY"},     \
     {PRIM(dotmem),          NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "M."},        \
     {PRIM(dotstack),        NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, ".S"},        \
+    {PRIM(fdotstackslice),  NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "F.SS"},        \
     {PRIM(udotstack),       NORMAL_WORD,  ALLOW_TCO, PERM_DOESNOT_APPLY, "U.S"},       \
     {PRIM(dotstackret),     NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "R.S"},       \
     {PRIM(udotstackret),    NORMAL_WORD, FORBID_TCO, PERM_DOESNOT_APPLY, "UR.S"},      \

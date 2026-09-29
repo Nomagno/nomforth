@@ -7,5 +7,5 @@ gcc -o fex -g -m32 -rdynamic -ldl \
         $N/core/forth.c \
         $N/primitives/prims.c \
         $N/primitives/oa.c \
-        $N/forth_libs/foreign.c \
+        $N/forth_libs/foreign.c -lm \
 && sh $N/runhelper.sh $N/core/bootstrap.fs $N/forth_libs/utilities.fs $@
