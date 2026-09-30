@@ -241,3 +241,34 @@ lspA CONSTANT lsp_start
     DUP 0 = UNTIL
     DROP
 ;
+
+
+
+: BREAK_START ." Stack at breakpoint " ;
+
+\ 'ACTUALLY HANGS FOREVER' version 
+\ : HANG BEGIN AGAIN ;
+
+\ Interactive version: if quiet mode is enabled,
+\ it will not work (aka: stdin will be busy with the
+\ next forth source code, rather than user input)
+: HANG GETC ;
+
+\ Set a breakpoint to inspect the stack.
+: BREAK"
+    PPW BREAK_START
+    POSTPONE s"
+    PPW COUNT
+    PPW TYPE
+    PPW .s
+    PPW CR
+    PPW HANG
+; immediate
+
+\ Example
+\ : test
+\   1 2
+\   BREAK" Foo"
+\   3 4
+\   BREAK" Bar"
+\ ;
