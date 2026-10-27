@@ -83,7 +83,7 @@ MAKEPRIM(worddoesprim) { // DO NOT CALL THE WORDDOESPRIM C PRIMITIVE DIRECTLY!
     Cell current_word = DICTPTR;
     Cell pc = funcPeek(c);
     GET_DATA(current_word, 2) = t_absjump; // replace first dummy END created by VAR with a jump
-    GET_DATA(current_word, 3) = pc+2; //replace other dummy END with jump value
+    GET_DATA(current_word, 3) = pc+1; //replace other dummy END with jump value
 }
 MAKEPRIM(worddoes) {
     // DOES>PRIM
