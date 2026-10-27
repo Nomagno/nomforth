@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Replace PWD with the absolute location of the nomforth source to make this into a relocatable script
 export NFPATH=$PWD/
 export N=$NFPATH
